@@ -3043,6 +3043,9 @@ smdk2400_config	:	unconfig
 smdk2410_config	:	unconfig
 	@$(MKCONFIG) $(@:_config=) arm arm920t smdk2410 samsung s3c24x0
 
+cloud2440_config	:	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm920t cloud2440 samsung s3c24x0
+
 spear300_config \
 spear310_config \
 spear320_config :	unconfig

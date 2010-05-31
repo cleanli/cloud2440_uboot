@@ -591,6 +591,7 @@ LIST_ARM9="			\
 	sheevaplug		\
 	smdk2400		\
 	smdk2410		\
+	cloud2440		\
 	spear300		\
 	spear310		\
 	spear320		\

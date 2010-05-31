@@ -5167,6 +5167,18 @@ extern unsigned int __machine_arch_type;
 # define machine_is_smdk2410()	(0)
 #endif
 
+#ifdef CONFIG_ARCH_CLOUD2440
+# ifdef machine_arch_type
+#  undef machine_arch_type
+#  define machine_arch_type	__machine_arch_type
+# else
+#  define machine_arch_type	MACH_TYPE_CLOUD2440
+# endif
+# define machine_is_cloud2440()	(machine_arch_type == MACH_TYPE_CLOUD2440)
+#else
+# define machine_is_cloud2440()	(0)
+#endif
+
 #ifdef CONFIG_ARCH_I519
 # ifdef machine_arch_type
 #  undef machine_arch_type
