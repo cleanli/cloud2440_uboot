@@ -59,25 +59,20 @@ static void s3c2410_hwcontrol(struct mtd_info *mtd, int cmd, unsigned int ctrl)
 	debugX(1, "hwcontrol(): 0x%02x 0x%02x\n", cmd, ctrl);
 
 	if (ctrl & NAND_CTRL_CHANGE) {
-		ulong IO_ADDR_W = (ulong)nand;
-
-		if (!(ctrl & NAND_CLE))
-			IO_ADDR_W |= S3C2410_ADDR_NCLE;
-		if (!(ctrl & NAND_ALE))
-			IO_ADDR_W |= S3C2410_ADDR_NALE;
-
-		chip->IO_ADDR_W = (void *)IO_ADDR_W;
-
 		if (ctrl & NAND_NCE)
-			writel(readl(&nand->NFCONF) & ~S3C2410_NFCONF_nFCE,
-			       &nand->NFCONF);
+			writel(readl(&nand->NFCONT) &  (~(1<<1)),
+			       &nand->NFCONT);
 		else
-			writel(readl(&nand->NFCONF) | S3C2410_NFCONF_nFCE,
-			       &nand->NFCONF);
+			writel(readl(&nand->NFCONT) |  (1<<1),
+			       &nand->NFCONT);
 	}
 
-	if (cmd != NAND_CMD_NONE)
-		writeb(cmd, chip->IO_ADDR_W);
+	if (cmd == NAND_CMD_NONE)
+		return;
+        if (ctrl & NAND_CLE)
+                writeb(cmd, &nand->NFCMD);
+        else
+                writeb(cmd, &nand->NFADDR);
 }
 
 static int s3c2410_dev_ready(struct mtd_info *mtd)
@@ -133,6 +128,7 @@ int board_nand_init(struct nand_chip *nand)
 	writel(readl(&clk_power->CLKCON) | (1 << 4), &clk_power->CLKCON);
 
 	/* initialize hardware */
+	/*
 	twrph0 = 3;
 	twrph1 = 0;
 	tacls = 0;
@@ -141,8 +137,15 @@ int board_nand_init(struct nand_chip *nand)
 	cfg |= S3C2410_NFCONF_TACLS(tacls - 1);
 	cfg |= S3C2410_NFCONF_TWRPH0(twrph0 - 1);
 	cfg |= S3C2410_NFCONF_TWRPH1(twrph1 - 1);
+	*/
+	cfg = (7<<12)|(7<<8)|(7<<4)|(0<<0); 
 	writel(cfg, &nand_reg->NFCONF);
 
+	cfg = (1<<4)|(0<<1)|(1<<0);
+	writel(cfg, &nand_reg->NFCONT);
+
+	writeb(0xff, &nand_reg->NFCMD); //reset
+	delay(0xff);
 	/* initialize nand_chip data structure */
 	nand->IO_ADDR_R = nand->IO_ADDR_W = (void *)&nand_reg->NFDATA;
 

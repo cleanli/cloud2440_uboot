@@ -154,7 +154,7 @@
 /*-----------------------------------------------------------------------
  * FLASH and environment organization
  */
-#define CONFIG_NAND_S3C2410
+#define CONFIG_NAND_S3C2410 1
 #define rNFCONF (*(volatile unsigned int *)0x4e000000)
 #define rNFCONT (*(volatile unsigned int *)0x4e000004)
 #define rNFCMD (*(volatile unsigned char *)0x4e000008)

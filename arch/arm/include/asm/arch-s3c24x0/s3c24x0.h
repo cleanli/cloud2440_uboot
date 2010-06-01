@@ -154,11 +154,18 @@ struct s3c24x0_lcd {
 /* NAND FLASH (see S3C2410 manual chapter 6) */
 struct s3c2410_nand {
 	u32	NFCONF;
+	u32	NFCONT;
 	u32	NFCMD;
 	u32	NFADDR;
 	u32	NFDATA;
+	u32	NFMECCD0;
+	u32	NFMECCD1;  /*0x18*/
+	u32	NFSECCD;
 	u32	NFSTAT;
-	u32	NFECC;
+	u32	NFESTAT0;
+	u32	NFESTAT1;
+	u32	NFMECC0;
+	u32	NFMECC1;  /*0x30*/
 };
 
 
