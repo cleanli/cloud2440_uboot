@@ -150,7 +150,7 @@ lowlevel_init:
 
 	.ltorg
 /* the literal pools origin */
-
+/*
 SMRDATA:
     .word (0+(B1_BWSCON<<4)+(B2_BWSCON<<8)+(B3_BWSCON<<12)+(B4_BWSCON<<16)+(B5_BWSCON<<20)+(B6_BWSCON<<24)+(B7_BWSCON<<28))
     .word ((B0_Tacs<<13)+(B0_Tcos<<11)+(B0_Tacc<<8)+(B0_Tcoh<<6)+(B0_Tah<<4)+(B0_Tacp<<2)+(B0_PMC))
@@ -165,3 +165,20 @@ SMRDATA:
     .word 0x32
     .word 0x30
     .word 0x30
+*/
+SMRDATA:
+mem_reg_value:
+        .long   0x2211d110
+        .long   0x00000700
+        .long   0x00000700
+        .long   0x00000700
+        .long   0x00000700
+        .long   0x00000700
+        .long   0x00000700
+        .long   0x00018009
+        .long   0x00018009
+        .long   0x00ac03f4
+        .long   0x000000b2
+        .long   0x00000030
+        .long   0x00000030
+

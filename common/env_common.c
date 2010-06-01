@@ -250,7 +250,7 @@ void env_relocate (void)
 	DEBUGF ("%s[%d] malloced ENV at %p\n", __FUNCTION__,__LINE__,env_ptr);
 #endif
 
-	if (gd->env_valid == 0) {
+//	if (gd->env_valid == 0) {
 #if defined(CONFIG_GTH)	|| defined(CONFIG_ENV_IS_NOWHERE)	/* Environment not changable */
 		puts ("Using default environment\n\n");
 #else
@@ -258,10 +258,11 @@ void env_relocate (void)
 		show_boot_progress (-60);
 #endif
 		set_default_env();
-	}
-	else {
+//	}
+/*	else {
 		env_relocate_spec ();
 	}
+	*/
 	gd->env_addr = (ulong)&(env_ptr->data);
 
 #ifdef CONFIG_AMIGAONEG3SE

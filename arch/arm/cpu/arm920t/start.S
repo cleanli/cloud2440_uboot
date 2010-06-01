@@ -114,8 +114,8 @@ start_code:
 	orr	r0, r0, #0xd3
 	msr	cpsr, r0
 
-	bl	coloured_LED_init
-	bl	red_LED_on
+	@bl	coloured_LED_init
+	@bl	red_LED_on
 
 #if	defined(CONFIG_AT91RM9200DK) || defined(CONFIG_AT91RM9200EK)
 	/*
@@ -156,20 +156,61 @@ copyex:
 	ldr	r0, =INTMSK
 	str	r1, [r0]
 # if defined(CONFIG_S3C2410)
-	ldr	r1, =0x3ff
+	ldr	r1, =0x7ff
 	ldr	r0, =INTSUBMSK
 	str	r1, [r0]
 # endif
 
-	/* FCLK:HCLK:PCLK = 1:2:4 */
-	/* default FCLK is 120 MHz ! */
-	ldr	r0, =CLKDIVN
-	mov	r1, #3
-	str	r1, [r0]
+#  define GPFCON                0x56000050
+#  define GPFDAT                0x56000054      /*  */
+#  define LOCKTIME              0x4C000000
+#  define MPLLCON               0x4C000004
+#  define UPLLCON               0x4C000008
+
+        ldr     r0, =GPFCON
+        mov     r1, #0x5500
+        str     r1, [r0]
+
+        @initialize clock
+        ldr     r0, =LOCKTIME
+        ldr     r1, =0x00ffffff
+        str     r1, [r0]
+        /* FCLK:HCLK:PCLK = 1:4:8 */
+        ldr     r0, =CLKDIVN
+        mov     r1, #5
+        str     r1, [r0]
+        @open code cache
+        mrc     p15,0,r1,c1,c0,0
+        orr     r1,r1,#0xc0000000
+        mcr     p15,0,r1,c1,c0,0
+        @UPLL setup
+        ldr     r0, =UPLLCON
+        ldr     r1, =(0x38<<12|0x2<<4|0x2)
+        str     r1, [r0]
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+
+        @MPLL setup
+        ldr     r0, =MPLLCON
+        ldr     r1, =0x7f021
+        str     r1, [r0]
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+	/* FCLK:HCLK:PCLK = 1:4:8 */
+	/* FCLK is 405 MHz ! */
 #endif	/* CONFIG_S3C24X0 */
 
-	/*
-	 * we do sys-critical inits only at reboot,
+	 /* we do sys-critical inits only at reboot,
 	 * not when booting from ram!
 	 */
 #ifndef CONFIG_SKIP_LOWLEVEL_INIT
@@ -177,6 +218,7 @@ copyex:
 #endif
 
 #ifndef CONFIG_SKIP_RELOCATE_UBOOT
+#if 0
 relocate:				/* relocate U-Boot to RAM	    */
 	adr	r0, _start		/* r0 <- current position of code   */
 	ldr	r1, _TEXT_BASE		/* test if we run from flash or RAM */
@@ -193,6 +235,7 @@ copy_loop:
 	stmia	r1!, {r3-r10}		/* copy to   target address [r1]    */
 	cmp	r0, r2			/* until source end addreee [r2]    */
 	ble	copy_loop
+#endif
 #endif	/* CONFIG_SKIP_RELOCATE_UBOOT */
 
 	/* Set up the stack						    */
@@ -258,7 +301,7 @@ cpu_init_crit:
 	 */
 	mov	ip, lr
 
-	bl	lowlevel_init
+	@bl	lowlevel_init
 
 	mov	lr, ip
 	mov	pc, lr

@@ -36,13 +36,14 @@
 #define CONFIG_ARM920T	1	/* This is an ARM920T Core	*/
 #define CONFIG_S3C24X0	1	/* in a SAMSUNG S3C24x0-type SoC	*/
 #define CONFIG_S3C2410	1	/* specifically a SAMSUNG S3C2410 SoC	*/
-#define CONFIG_SMDK2410	1	/* on a SAMSUNG SMDK2410 Board  */
+#define CONFIG_CLOUD2440	1	/* on a SAMSUNG SMDK2410 Board  */
 
 /* input clock of PLL */
 #define CONFIG_SYS_CLK_FREQ	12000000/* the SMDK2410 has 12MHz input clock */
 
+#define CONFIG_SYS_NO_FLASH 1
 
-#define USE_920T_MMU		1
+#define USE_920T_MMU		0
 #undef CONFIG_USE_IRQ			/* we don't need IRQ/FIQ stuff */
 
 /*
@@ -54,10 +55,10 @@
 /*
  * Hardware drivers
  */
-#define CONFIG_NET_MULTI
-#define CONFIG_CS8900		/* we have a CS8900 on-board */
-#define CONFIG_CS8900_BASE	0x19000300
-#define CONFIG_CS8900_BUS16	/* the Linux driver does accesses as shorts */
+//#define CONFIG_NET_MULTI
+//#define CONFIG_CS8900		/* we have a CS8900 on-board */
+//#define CONFIG_CS8900_BASE	0x19000300
+//#define CONFIG_CS8900_BUS16	/* the Linux driver does accesses as shorts */
 
 /*
  * select serial console configuration
@@ -99,8 +100,8 @@
 /*#define CONFIG_BOOTARGS	"root=ramfs devfs=mount console=ttySA0,9600" */
 /*#define CONFIG_ETHADDR	08:00:3e:26:0a:5b */
 #define CONFIG_NETMASK          255.255.255.0
-#define CONFIG_IPADDR		10.0.0.110
-#define CONFIG_SERVERIP		10.0.0.1
+#define CONFIG_IPADDR		192.168.58.111
+#define CONFIG_SERVERIP		192.168.58.43
 /*#define CONFIG_BOOTFILE	"elinos-lart" */
 /*#define CONFIG_BOOTCOMMAND	"tftp; bootm" */
 
@@ -114,7 +115,7 @@
  * Miscellaneous configurable options
  */
 #define	CONFIG_SYS_LONGHELP				/* undef to save memory		*/
-#define	CONFIG_SYS_PROMPT		"SMDK2410 # "	/* Monitor Command Prompt	*/
+#define	CONFIG_SYS_PROMPT   		"Uboot@Cloud2440 # "	/* Monitor Command Prompt	*/
 #define	CONFIG_SYS_CBSIZE		256		/* Console I/O Buffer Size	*/
 #define	CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16) /* Print Buffer Size */
 #define	CONFIG_SYS_MAXARGS		16		/* max number of command args	*/
@@ -126,7 +127,6 @@
 #define	CONFIG_SYS_LOAD_ADDR		0x33000000	/* default load address	*/
 
 #define	CONFIG_SYS_HZ			1000
-
 /* valid baudrates */
 #define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
@@ -148,13 +148,66 @@
 #define PHYS_SDRAM_1		0x30000000 /* SDRAM Bank #1 */
 #define PHYS_SDRAM_1_SIZE	0x04000000 /* 64 MB */
 
-#define PHYS_FLASH_1		0x00000000 /* Flash Bank #1 */
+//#define PHYS_FLASH_1		0x00000000 /* Flash Bank #1 */
 
-#define CONFIG_SYS_FLASH_BASE		PHYS_FLASH_1
 
 /*-----------------------------------------------------------------------
  * FLASH and environment organization
  */
+#define CONFIG_NAND_S3C2410
+#define rNFCONF (*(volatile unsigned int *)0x4e000000)
+#define rNFCONT (*(volatile unsigned int *)0x4e000004)
+#define rNFCMD (*(volatile unsigned char *)0x4e000008)
+#define rNFADDR (*(volatile unsigned char *)0x4e00000c)
+#define rNFDATA (*(volatile unsigned char *)0x4e000010)
+#define rNFSTAT (*(volatile unsigned int *)0x4e000020)
+#define rNFECC (*(volatile unsigned int *)0x4e00002c)
+
+#define SECTORSIZE 512
+/*#define NAND_SECTOR_SIZE SECTORSIZE
+ * #define NAND_BLOCK_MASK 511*/
+#define ADDR_COLUMN 1
+#define ADDR_PAGE 3 /* 3 bytes*/
+#define ADDR_COLUMN_PAGE 4 /* 4 bytes  */
+#define NAND_ChipID_UNKNOWN 0x00
+#define NAND_MAX_FLOORS 1
+#define NAND_MAX_CHIPS 1
+/* Nand Flash lower interface*/
+#define WRITE_NAND_COMMAND(d, adr) {rNFCMD = d;}
+#define WRITE_NAND_ADDRESS(d, adr) {rNFADDR = d;}
+#define WRITE_NAND(d, adr) {rNFDATA = d;}
+#define READ_NAND(adr) (rNFDATA)
+
+#define NAND_WAIT_READY(nand) {while(!(rNFSTAT&(1<<0)));}
+#define WRITE_NAND_COMMAND(d, adr) {rNFCMD = d;} 
+
+#define NAND_DISABLE_CE(nand) {rNFCONT |= (1<<1);}
+#define NAND_ENABLE_CE(nand) {rNFCONT &= ~(1<<1);}
+#define WRITE_NAND_COMMANDW(d, adr) NF_CmdW(d)
+/* the following functions are NOP's because S3C24X0 handles this in hardware */
+
+#define NAND_CTL_CLRALE(nandptr)
+#define NAND_CTL_SETALE(nandptr)
+#define NAND_CTL_CLRCLE(nandptr)
+#define NAND_CTL_SETCLE(nandptr)
+
+#define CONFIG_MTD_NAND_VERIFY_WRITE 1
+
+#define CONFIG_CMD_NAND
+#define CONFIG_NAND_LEGACY 1
+#define CONFIG_SYS_NAND_BASE 0x4e000000
+#define CONFIG_SYS_MAX_NAND_DEVICE 1
+#define CONFIG_SYS_USE_NANDFLASH 	1
+#define CONFIG_SYS_MAX_FLASH_BANKS	0	/* max number of memory banks */
+#define CONFIG_SYS_MAX_FLASH_SECT	(4096)	/* max number of sectors on one chip */
+#undef CONFIG_SYS_FLASH_CFI
+#define CONFIG_ENV_IS_IN_NAND
+#define CONFIG_ENV_OFFSET 0x8000
+#define CONFIG_ENV_OFFSET_REDUND 0xc000
+#define CONFIG_ENV_SIZE 0x4000
+#define CONFIG_CLEAN_ENV  1
+
+#if 0
 
 #define CONFIG_AMD_LV400	1	/* uncomment this if you have a LV400 flash */
 #if 0
@@ -179,5 +232,6 @@
 
 #define	CONFIG_ENV_IS_IN_FLASH	1
 #define CONFIG_ENV_SIZE		0x10000	/* Total Size of Environment Sector */
+#endif /*if 0*/
 
 #endif	/* __CONFIG_H */
