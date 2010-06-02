@@ -360,7 +360,7 @@ static int dm9000_init(struct eth_device *dev, bd_t *bd)
 	DM9000_iow(DM9000_RCR, RCR_DIS_LONG | RCR_DIS_CRC | RCR_RXEN);
 	/* Enable TX/RX interrupt mask */
 	DM9000_iow(DM9000_IMR, IMR_PAR);
-
+#if 0
 	i = 0;
 	while (!(phy_read(1) & 0x20)) {	/* autonegation complete bit */
 		udelay(1000);
@@ -392,6 +392,7 @@ static int dm9000_init(struct eth_device *dev, bd_t *bd)
 		break;
 	}
 	printf("mode\n");
+#endif
 	return 0;
 }
 
@@ -552,6 +553,15 @@ void dm9000_write_srom_word(int offset, u16 val)
 static void dm9000_get_enetaddr(struct eth_device *dev)
 {
 	int i;
+	char *end, *tmp = getenv("ethaddr");
+
+	if(tmp){
+		for (i = 0; i < 6; i++){
+			dev->enetaddr[i] = simple_strtoul(tmp, &end, 16);
+			tmp = end + 1;
+		}
+		return;
+	}
 #if !defined(CONFIG_DM9000_NO_SROM)
 	for (i = 0; i < 3; i++)
 		dm9000_read_srom_word(i, dev->enetaddr + (2 * i));
@@ -627,6 +637,7 @@ int dm9000_initialize(bd_t *bis)
 	/* Load MAC address from EEPROM */
 	dm9000_get_enetaddr(dev);
 
+	dm9000_init(dev, bis);
 	dev->init = dm9000_init;
 	dev->halt = dm9000_halt;
 	dev->send = dm9000_send;

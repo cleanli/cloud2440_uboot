@@ -364,7 +364,7 @@ int eth_init(bd_t *bis)
 
 void eth_halt(void)
 {
-	if (!eth_current)
+//	if (!eth_current)
 		return;
 
 	eth_current->halt(eth_current);
