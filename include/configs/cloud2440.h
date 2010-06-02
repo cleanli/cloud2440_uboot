@@ -55,10 +55,22 @@
 /*
  * Hardware drivers
  */
-//#define CONFIG_NET_MULTI
-//#define CONFIG_CS8900		/* we have a CS8900 on-board */
+#define CONFIG_NET_MULTI 1
+#define CONFIG_DRIVER_DM9000	1	/* we have a CS8900 on-board */
 //#define CONFIG_CS8900_BASE	0x19000300
 //#define CONFIG_CS8900_BUS16	/* the Linux driver does accesses as shorts */
+#ifdef CONFIG_DRIVER_DM9000
+#       define CONFIG_DM9000_BASE       0x19000300
+#       define DM9000_IO                CONFIG_DM9000_BASE
+#       define DM9000_DATA              (CONFIG_DM9000_BASE + 4)
+//#       define CONFIG_DM9000_DEBUG
+#	define CONFIG_DM9000_NO_SROM 1
+//#       define CONFIG_OVERWRITE_ETHADDR_ONCE
+
+#endif
+
+#define CONFIG_HOSTNAME         CLOUD2440
+
 
 /*
  * select serial console configuration

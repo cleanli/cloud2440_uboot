@@ -87,6 +87,7 @@ TODO: external MII is not functional, only internal at the moment.
 #define DM9000_DMP_PACKET(func,packet,length)
 #endif
 
+const char mac[6]={0x32, 0x58, 0xab, 0x6d, 0xaa, 0xec};
 /* Structure/enum declaration ------------------------------- */
 typedef struct board_info {
 	u32 runt_length_counter;	/* counter: RX length < 64byte */
@@ -364,7 +365,7 @@ static int dm9000_init(struct eth_device *dev, bd_t *bd)
 	while (!(phy_read(1) & 0x20)) {	/* autonegation complete bit */
 		udelay(1000);
 		i++;
-		if (i == 10000) {
+		if (i == 1000) {
 			printf("could not establish link\n");
 			return 0;
 		}
@@ -550,10 +551,13 @@ void dm9000_write_srom_word(int offset, u16 val)
 
 static void dm9000_get_enetaddr(struct eth_device *dev)
 {
-#if !defined(CONFIG_DM9000_NO_SROM)
 	int i;
+#if !defined(CONFIG_DM9000_NO_SROM)
 	for (i = 0; i < 3; i++)
 		dm9000_read_srom_word(i, dev->enetaddr + (2 * i));
+#else
+	for (i = 0; i < 6; i++)
+		dev->enetaddr[i] = mac[i];
 #endif
 }
 
