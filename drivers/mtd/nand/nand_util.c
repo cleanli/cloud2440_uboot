@@ -180,8 +180,8 @@ int nand_erase_opts(nand_info_t *meminfo, const nand_erase_options_t *opts)
 			if (percent != percent_complete) {
 				percent_complete = percent;
 
-				printf("\rErasing at 0x%llx -- %3d%% complete.",
-				       erase.addr, percent);
+				printf("\rErasing at 0x%x -- %3d%% complete.",
+				      (unsigned long) erase.addr, percent);
 
 				if (opts->jffs2 && result == 0)
 					printf(" Cleanmarker written at 0x%llx.",
