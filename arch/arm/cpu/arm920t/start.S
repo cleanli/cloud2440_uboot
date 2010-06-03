@@ -217,25 +217,76 @@ copyex:
 	bl	cpu_init_crit
 #endif
 
+#define ULCON0  0x50000000
+#define UCCON0  0x50000004
+#define UFCON0  0x50000008
+#define USCON0  0x50000010
+#define UTXH0   0x50000020
+#define URXH0   0x50000024
+#define UBRDIV0 0x50000028
+
+/*Init serial port 0*/
+        ldr     r0, =ULCON0
+        mov     r1, #0x3
+        str     r1, [r0]
+        ldr     r0, =UCCON0
+        mov     r1, #0x5
+        str     r1, [r0]
+        ldr     r0, =UBRDIV0
+        mov     r1, #0x1b
+        str     r1, [r0]        /*set baudrate 115200bps*/
+/* init serial end  */
+
 #ifndef CONFIG_SKIP_RELOCATE_UBOOT
-#if 0
-relocate:				/* relocate U-Boot to RAM	    */
-	adr	r0, _start		/* r0 <- current position of code   */
-	ldr	r1, _TEXT_BASE		/* test if we run from flash or RAM */
-	cmp	r0, r1			/* don't reloc during debug         */
-	beq	stack_setup
+	ldr	sp, =0x00000ffc 	/*sp for tmp use*/
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@
+@ copy code to ram from nand
+@
+#define NAND_CTL_BASE   0x4e000000
+#define oNFCONF         0x0
+#define oNFCONT         0x4
+#define oNFCMD          0x8
+#define oNFSTAT         0x20
 
-	ldr	r2, _armboot_start
-	ldr	r3, _bss_start
-	sub	r2, r3, r2		/* r2 <- size of armboot            */
-	add	r2, r0, r2		/* r2 <- source end address         */
+        @ reset NAND
+        mov     r1, #NAND_CTL_BASE
+        ldr     r2, =( (7<<12)|(7<<8)|(7<<4)|(0<<0) )
+        str     r2, [r1, #oNFCONF]
 
-copy_loop:
-	ldmia	r0!, {r3-r10}		/* copy from source address [r0]    */
-	stmia	r1!, {r3-r10}		/* copy to   target address [r1]    */
-	cmp	r0, r2			/* until source end addreee [r2]    */
-	ble	copy_loop
-#endif
+        ldr     r2, =( (1<<4)|(0<<1)|(1<<0) ) @ Active low CE Control
+        str     r2, [r1, #oNFCONT]
+        ldr     r2, [r1, #oNFCONT]
+
+@        ldr     r2, =(0x6)              @ RnB Clear
+@        str     r2, [r1, #oNFSTAT]
+@        ldr     r2, [r1, #oNFSTAT]
+
+        mov     r2, #0xff               @ RESET command
+        strb    r2, [r1, #oNFCMD]
+        mov     r3, #0                  @ wait
+1:      add     r3, r3, #0x1
+        cmp     r3, #0x2a
+        blt     1b
+
+@        ldr     r2, [r1, #oNFCONT]
+@        orr     r2, r2, #0x2            @ Flash Memory Chip Disable
+@        str     r2, [r1, #oNFCONT]
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+        @ get ready to call C functions (for nand_read())
+        @ldr     sp, DW_STACK_START      @ has been setuped at start
+
+#define TEXT_RAM_BASE   0x33f00000
+#define TEXT_NAND_BASE  0x0
+#define TEXT_SIZE       0x60000
+
+        @ copy minicb ENV block to ram base
+        ldr     r0, =TEXT_RAM_BASE
+        ldr     r1, =TEXT_NAND_BASE
+        ldr     r2, =TEXT_SIZE
+        bl      nand_read_ll
 #endif	/* CONFIG_SKIP_RELOCATE_UBOOT */
 
 	/* Set up the stack						    */

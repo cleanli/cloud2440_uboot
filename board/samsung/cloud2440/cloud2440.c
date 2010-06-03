@@ -135,3 +135,69 @@ int board_eth_init(bd_t *bis)
 #endif
 }
 #endif
+
+#define __REGb(x)       (*(volatile unsigned char *)(x))
+#define __REGi(x)       (*(volatile unsigned int *)(x))
+#define NF_BASE         0x4e000000
+#define USCON0 *(volatile unsigned long *)0x50000010
+#define UTXH0 *(volatile unsigned long *)0x50000020
+#define URXH0 *(volatile unsigned long *)0x50000024
+
+#define NFCONF          __REGi(NF_BASE + 0x0)
+#define NFCONT          __REGi(NF_BASE + 0x4)
+#define NFCMD           __REGb(NF_BASE + 0x8)
+#define NFADDR          __REGb(NF_BASE + 0xC)
+#define NFDATA          __REGb(NF_BASE + 0x10)
+#define NFSTAT          __REGb(NF_BASE + 0x20)
+
+#define NAND_CHIP_ENABLE  (NFCONT &= ~(1<<1))
+#define NAND_CHIP_DISABLE (NFCONT |=  (1<<1))
+#define NAND_CLEAR_RB     (NFSTAT |=  (1<<2))
+#define NAND_DETECT_RB    { while(! (NFSTAT&(1<<2)) );}
+
+#define NAND_SECTOR_SIZE        512
+#define NAND_BLOCK_MASK         (NAND_SECTOR_SIZE - 1)
+
+void s3c2440_serial_send_byte(unsigned char c)
+{
+        while(!(USCON0 & 0x2));
+        UTXH0 = c;
+}
+
+void ps(char*s)
+{
+	while(*s)
+		s3c2440_serial_send_byte(*s++);
+}
+/* low level nand read function */
+int nand_read_ll(unsigned char *buf, unsigned long start_addr, int size)
+{
+        int i, j, k = 0;
+
+	ps("\r\n\r\nWelcome use U-boot, compiled by Clean Li.\r\n");
+        NAND_CHIP_ENABLE;
+
+        for(i=start_addr; i < (start_addr + size);) {
+                /* READ0 */
+                NAND_CLEAR_RB;
+                NFCMD = 0;
+
+                /* Write Address */
+                NFADDR = i & 0xff;
+                NFADDR = (i >> 9) & 0xff;
+                NFADDR = (i >> 17) & 0xff;
+                NFADDR = (i >> 25) & 0xff;
+
+                NAND_DETECT_RB;
+
+                for(j=0; j < NAND_SECTOR_SIZE; j++, i++) {
+                        *buf = (NFDATA & 0xff);
+                        buf++;
+                }
+		if((k++ & 0xf) == 0)
+                	s3c2440_serial_send_byte('>');
+        }
+        NAND_CHIP_DISABLE;
+	ps("\r\nMove U-boot code from nand to Ram done.\r\n");
+        return 0;
+}
