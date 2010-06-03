@@ -301,7 +301,7 @@ cpu_init_crit:
 	 */
 	mov	ip, lr
 
-	@bl	lowlevel_init
+	bl	lowlevel_init
 
 	mov	lr, ip
 	mov	pc, lr
@@ -477,3 +477,36 @@ fiq:
 	bl	do_fiq
 
 #endif
+
+#define BWSCON	0x48000000
+lowlevel_init:
+	/* memory control configuration */
+        ldr     r0, =SMRDATA
+	ldr	r1, =BWSCON	/* Bus Width Status Controller */
+	add     r2, r0, #13*4
+0:
+	ldr     r3, [r0], #4
+	str     r3, [r1], #4
+	cmp     r2, r0
+	bne     0b
+
+	/* everything is fine now */
+	mov	pc, lr
+
+	.ltorg
+/* the literal pools origin */
+SMRDATA:
+        .long   0x22119120
+        .long   0x00000700
+        .long   0x00000700
+        .long   0x00000700
+        .long   0x00001f4c
+        .long   0x00000700
+        .long   0x00000700
+        .long   0x00018005
+        .long   0x00018005
+        .long   0x008e0459
+        .long   0x00000032
+        .long   0x00000030
+        .long   0x00000030
+
