@@ -771,11 +771,10 @@ str	r3, [r2, #4]
 	@ps("\r\nMove U-boot code from nand to Ram done.\r\n");
 adr	r0, done_msg
 bl	ps
-b	test
         @return 0;
 mov	r0, #0
 pop	{r4, r5, r6, r7, sl, pc}
 wel_mesg:
-.string "\r\n\r\nWelcome use U-boot, compiled by Clean Li.\r\n"
+.string "\r\n\r\nWelcome use U-boot, compiled by Clean Li.\r\nMoving U-boot code from nand to Ram\n"
 done_msg:
-.string "\r\nMove U-boot code from nand to Ram done.\r\n"
+.string "\r\ndone.\r\n"
