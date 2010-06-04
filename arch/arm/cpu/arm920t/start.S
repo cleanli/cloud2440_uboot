@@ -132,7 +132,8 @@ SMRDATA:
         .long   0x00000030
 */
 
-/*88888888888888888888888888888888888888*/
+/*88888888888888888just for debug888888888888888888888*/
+#if 0
 test:
 	mov	r3, #0
 xtest:
@@ -154,6 +155,7 @@ aagg:
 	bne	aagg
 @@@@@@@@@@
 	b	xtest
+#endif
 /*88888888888888888888888888888888888888*/
 
 /*
@@ -164,9 +166,11 @@ start_code:
 	/*
 	 * set the cpu to SVC32 mode
 	 */
+@make gpio F 4-7 output, for led debug
 	ldr	r0, =0x56000050
 	mov	r1, #0x5500
 	str	r1, [r0]
+@set gpio F4 high, the led off
 	ldr	r0, =0x56000054
 	mov	r1, #0x10
 	str	r1, [r0]
@@ -288,11 +292,6 @@ copyex:
 	 * not when booting from ram!
 	 */
 @	b test
-@@@@@@@@@@
-	ldr	r0, =0x56000054
-	mov	r1, #0x60
-	str	r1, [r0]
-@@@@@@@@@@
 #define GPHCON  0x56000070
 #define GPHUP   0x56000078
 #define ULCON0  0x50000000
@@ -339,8 +338,6 @@ stack_setup:
 #endif
 	sub	sp, r0, #12		/* leave 3 words for abort-stack    */
 
-mov	r0, #'A'
-bl	s3c2440_serial_send_byte
 #ifndef CONFIG_SKIP_RELOCATE_UBOOT
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @
@@ -678,7 +675,7 @@ pop	{r4, r5, r6, pc}
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 nand_read_ll:
 push	{r4, r5, r6, r7, sl, lr}
-	@b test
+
 mov	r6, r0
 mov	r7, r1
 mov	sl, r2
@@ -775,6 +772,6 @@ bl	ps
 mov	r0, #0
 pop	{r4, r5, r6, r7, sl, pc}
 wel_mesg:
-.string "\r\n\r\nWelcome use U-boot, compiled by Clean Li.\r\nMoving U-boot code from nand to Ram\n"
+.string "\r\n\r\nWelcome use U-boot, compiled by Clean Li.\r\nMoving U-boot code from nand to Ram\r\n"
 done_msg:
 .string "\r\ndone.\r\n"
