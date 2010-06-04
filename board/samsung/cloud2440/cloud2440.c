@@ -136,6 +136,7 @@ int board_eth_init(bd_t *bis)
 }
 #endif
 
+#if 0
 #define __REGb(x)       (*(volatile unsigned char *)(x))
 #define __REGi(x)       (*(volatile unsigned int *)(x))
 #define NF_BASE         0x4e000000
@@ -201,3 +202,4 @@ int nand_read_ll(unsigned char *buf, unsigned long start_addr, int size)
 	ps("\r\nMove U-boot code from nand to Ram done.\r\n");
         return 0;
 }
+#endif

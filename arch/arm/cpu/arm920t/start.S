@@ -100,6 +100,61 @@ FIQ_STACK_START:
 	.word 0x0badc0de
 #endif
 
+	.ltorg
+/* the literal pools origin */
+SMRDATA:
+        .long   0x22111110
+        .long   0x00000700
+        .long   0x00000700
+        .long   0x00000700
+        .long   0x00000700
+        .long   0x00000700
+        .long   0x00000700
+        .long   0x00018009
+        .long   0x00018009
+        .long   0x00ac03f4
+        .long   0x000000b2
+        .long   0x00000030
+        .long   0x00000030
+/*
+        .long   0x22119120
+        .long   0x00000700
+        .long   0x00000700
+        .long   0x00000700
+        .long   0x00001f4c
+        .long   0x00000700
+        .long   0x00000700
+        .long   0x00018005
+        .long   0x00018005
+        .long   0x008e0459
+        .long   0x00000032
+        .long   0x00000030
+        .long   0x00000030
+*/
+
+/*88888888888888888888888888888888888888*/
+test:
+	mov	r3, #0
+xtest:
+@@@@@@@@@@
+	ldr	r0, =0x56000054
+	add 	r3, r3, #1
+	str	r3, [r0]
+@@@@@@@@@@
+@@@@@@@@@@
+@	ldr	r0, =0x50000020
+@	mov	r1, #0x35
+@	str	r1, [r0]
+@@@@@@@@@@
+@@@@@@@@@@
+	ldr	r0, =0x00000f20
+aagg:
+	sub	r0, r0, #1
+	cmp	r0, #0
+	bne	aagg
+@@@@@@@@@@
+	b	xtest
+/*88888888888888888888888888888888888888*/
 
 /*
  * the actual start code
@@ -109,11 +164,19 @@ start_code:
 	/*
 	 * set the cpu to SVC32 mode
 	 */
+	ldr	r0, =0x56000050
+	mov	r1, #0x5500
+	str	r1, [r0]
+	ldr	r0, =0x56000054
+	mov	r1, #0x10
+	str	r1, [r0]
+
 	mrs	r0, cpsr
 	bic	r0, r0, #0x1f
 	orr	r0, r0, #0xd3
 	msr	cpsr, r0
 
+	ldr	sp, =0x00000ffc 	/*sp for tmp use*/
 	@bl	coloured_LED_init
 	@bl	red_LED_on
 
@@ -131,6 +194,7 @@ copyex:
 	bne	copyex
 #endif
 
+@	b test
 #ifdef CONFIG_S3C24X0
 	/* turn off the watchdog */
 
@@ -147,6 +211,10 @@ copyex:
 
 	ldr	r0, =pWTCON
 	mov	r1, #0x0
+	str	r1, [r0]
+@@@@@@@@@@
+	ldr	r0, =0x56000054
+	mov	r1, #0x30
 	str	r1, [r0]
 
 	/*
@@ -206,6 +274,12 @@ copyex:
         nop
         nop
         nop
+@	b test
+@@@@@@@@@@
+	ldr	r0, =0x56000054
+	mov	r1, #0x40
+	str	r1, [r0]
+@@@@@@@@@@
 	/* FCLK:HCLK:PCLK = 1:4:8 */
 	/* FCLK is 405 MHz ! */
 #endif	/* CONFIG_S3C24X0 */
@@ -213,10 +287,14 @@ copyex:
 	 /* we do sys-critical inits only at reboot,
 	 * not when booting from ram!
 	 */
-#ifndef CONFIG_SKIP_LOWLEVEL_INIT
-	bl	cpu_init_crit
-#endif
-
+@	b test
+@@@@@@@@@@
+	ldr	r0, =0x56000054
+	mov	r1, #0x60
+	str	r1, [r0]
+@@@@@@@@@@
+#define GPHCON  0x56000070
+#define GPHUP   0x56000078
 #define ULCON0  0x50000000
 #define UCCON0  0x50000004
 #define UFCON0  0x50000008
@@ -226,6 +304,12 @@ copyex:
 #define UBRDIV0 0x50000028
 
 /*Init serial port 0*/
+        ldr     r0, =GPHCON
+        ldr     r1, =0xaaa0
+        str     r1, [r0]
+        ldr     r0, =GPHUP
+        ldr     r1, =0x7ff
+        str     r1, [r0]
         ldr     r0, =ULCON0
         mov     r1, #0x3
         str     r1, [r0]
@@ -235,10 +319,29 @@ copyex:
         ldr     r0, =UBRDIV0
         mov     r1, #0x1b
         str     r1, [r0]        /*set baudrate 115200bps*/
-/* init serial end  */
+@mov	r0, #'A'
+@bl	s3c2440_serial_send_byte
 
+/* init serial end  */
+@	b test
+#ifndef CONFIG_SKIP_LOWLEVEL_INIT
+	bl	cpu_init_crit
+#endif
+
+@	b test
+	/* Set up the stack						    */
+stack_setup:
+	ldr	r0, _TEXT_BASE		/* upper 128 KiB: relocated uboot   */
+	sub	r0, r0, #CONFIG_SYS_MALLOC_LEN	/* malloc area              */
+	sub	r0, r0, #CONFIG_SYS_GBL_DATA_SIZE /* bdinfo                 */
+#ifdef CONFIG_USE_IRQ
+	sub	r0, r0, #(CONFIG_STACKSIZE_IRQ+CONFIG_STACKSIZE_FIQ)
+#endif
+	sub	sp, r0, #12		/* leave 3 words for abort-stack    */
+
+mov	r0, #'A'
+bl	s3c2440_serial_send_byte
 #ifndef CONFIG_SKIP_RELOCATE_UBOOT
-	ldr	sp, =0x00000ffc 	/*sp for tmp use*/
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @
 @ copy code to ram from nand
@@ -278,7 +381,7 @@ copyex:
         @ get ready to call C functions (for nand_read())
         @ldr     sp, DW_STACK_START      @ has been setuped at start
 
-#define TEXT_RAM_BASE   0x33f00000
+#define TEXT_RAM_BASE   0x33f80000
 #define TEXT_NAND_BASE  0x0
 #define TEXT_SIZE       0x60000
 
@@ -286,18 +389,10 @@ copyex:
         ldr     r0, =TEXT_RAM_BASE
         ldr     r1, =TEXT_NAND_BASE
         ldr     r2, =TEXT_SIZE
+@	b test
         bl      nand_read_ll
+@	b test
 #endif	/* CONFIG_SKIP_RELOCATE_UBOOT */
-
-	/* Set up the stack						    */
-stack_setup:
-	ldr	r0, _TEXT_BASE		/* upper 128 KiB: relocated uboot   */
-	sub	r0, r0, #CONFIG_SYS_MALLOC_LEN	/* malloc area              */
-	sub	r0, r0, #CONFIG_SYS_GBL_DATA_SIZE /* bdinfo                 */
-#ifdef CONFIG_USE_IRQ
-	sub	r0, r0, #(CONFIG_STACKSIZE_IRQ+CONFIG_STACKSIZE_FIQ)
-#endif
-	sub	sp, r0, #12		/* leave 3 words for abort-stack    */
 
 clear_bss:
 	ldr	r0, _bss_start		/* find start of bss segment        */
@@ -309,6 +404,7 @@ clbss_l:str	r2, [r0]		/* clear loop...                    */
 	cmp	r0, r1
 	ble	clbss_l
 
+@	b test
 	ldr	pc, _start_armboot
 
 _start_armboot:	.word start_armboot
@@ -335,16 +431,24 @@ cpu_init_crit:
 	mcr	p15, 0, r0, c7, c7, 0	/* flush v3/v4 cache */
 	mcr	p15, 0, r0, c8, c7, 0	/* flush v4 TLB */
 
+@	b test
 	/*
 	 * disable MMU stuff and caches
 	 */
+	/*
 	mrc	p15, 0, r0, c1, c0, 0
 	bic	r0, r0, #0x00002300	@ clear bits 13, 9:8 (--V- --RS)
 	bic	r0, r0, #0x00000087	@ clear bits 7, 2:0 (B--- -CAM)
 	orr	r0, r0, #0x00000002	@ set bit 2 (A) Align
 	orr	r0, r0, #0x00001000	@ set bit 12 (I) I-Cache
 	mcr	p15, 0, r0, c1, c0, 0
+	*/
 
+        mrc     p15, 0, r1, c1, c0, 0           @ read ctrl register
+        orr     r1, r1, #0xc0000000             @ Asynchronous
+        mcr     p15, 0, r1, c1, c0, 0           @ write ctrl register
+
+@	b test
 	/*
 	 * before relocating, we have to setup RAM timing
 	 * because memory timing is board-dependend, you will
@@ -352,6 +456,7 @@ cpu_init_crit:
 	 */
 	mov	ip, lr
 
+@	b test
 	bl	lowlevel_init
 
 	mov	lr, ip
@@ -533,6 +638,8 @@ fiq:
 lowlevel_init:
 	/* memory control configuration */
         ldr     r0, =SMRDATA
+	ldr	r1, _TEXT_BASE
+	sub	r0, r0, r1
 	ldr	r1, =BWSCON	/* Bus Width Status Controller */
 	add     r2, r0, #13*4
 0:
@@ -544,20 +651,131 @@ lowlevel_init:
 	/* everything is fine now */
 	mov	pc, lr
 
-	.ltorg
-/* the literal pools origin */
-SMRDATA:
-        .long   0x22119120
-        .long   0x00000700
-        .long   0x00000700
-        .long   0x00000700
-        .long   0x00001f4c
-        .long   0x00000700
-        .long   0x00000700
-        .long   0x00018005
-        .long   0x00018005
-        .long   0x008e0459
-        .long   0x00000032
-        .long   0x00000030
-        .long   0x00000030
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+s3c2440_serial_send_byte:
+mov	r2, #0x50000000
+ldr	r3, [r2,#16]
+tst	r3, #2
+beq	s3c2440_serial_send_byte
+str	r0, [r2, #32]
+mov	pc, lr
 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ps:
+push	{r4, r5, r6, lr}
+mov	r5, r0
+mov 	r4, #0
+b	1f
+2:
+bl	s3c2440_serial_send_byte
+1:
+ldrb	r3, [r5, r4]
+subs	r0, r3, #0
+add	r4, r4, #1
+bne	2b
+pop	{r4, r5, r6, pc}
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+nand_read_ll:
+push	{r4, r5, r6, r7, sl, lr}
+	@b test
+mov	r6, r0
+mov	r7, r1
+mov	sl, r2
+
+@print welcome message
+adr     r0, wel_mesg
+bl	ps
+
+@nand chip enable
+mov	r2, #0x4e000000
+ldr	r3, [r2, #4]
+bic	r3, r3, #2
+str	r3, [r2, #4]
+
+@r7=nand start addr
+mov	r4, r7
+mov 	r5, #0
+b	1f
+
+@nand clear_rb
+2:
+mov	r2, #0x4e000000
+ldrb	r3, [r2, #32]
+asr	r1, r4, #9	
+
+@------------following direct from asm file
+orr	r3, r3, #4
+        @NFCMD = 0;
+
+        @        NFADDR = i & 0xff;
+        @        NFADDR = (i >> 9) & 0xff;
+        @        NFADDR = (i >> 17) & 0xff;
+asr	r0, r4, #17
+        @        NFADDR = (i >> 25) & 0xff;
+asr	ip, r4, #25
+        @NAND_CHIP_ENABLE;
+        @        NAND_CLEAR_RB;
+strb	r3, [r2, #32]
+
+and	r1, r1, #255
+        @        NFADDR = (i >> 17) & 0xff;
+and	r0, r0, #255
+        @        NFADDR = (i >> 25) & 0xff;
+and	ip, ip, #255
+        @        NFADDR = i & 0xff;
+and	lr, r4, #255
+mov	r3, #0
+strb	r3, [r2, #8]
+
+        @        NFADDR = i & 0xff;
+strb	lr, [r2, #12]
+        @        NFADDR = (i >> 9) & 0xff;
+strb	r1, [r2, #12]
+        @        NFADDR = (i >> 17) & 0xff;
+strb	r0, [r2, #12]
+        @        NFADDR = (i >> 25) & 0xff;
+strb	ip, [r2, #12]
+
+        @        NAND_DETECT_RB;
+3:
+mov	r3, #0x4e000000
+ldrb	r3, [r3, #32]
+tst	r3, #4
+beq	3b
+
+        @        for(j=0; j < NAND_SECTOR_SIZE; j++, i++) {
+mov	r2, #0
+4:
+mov	r3, #0x4e000000
+ldrb	r3, [r3, #16]
+strb	r3, [r6, r2]
+add	r2, r2, #1
+cmp	r2, #512
+bne	4b
+tst	r5, #15
+add	r4, r4, #512
+add	r6, r6, #512
+moveq	r0, #'>'
+bleq	s3c2440_serial_send_byte
+1:
+add	r5, r5, #1
+add	r3, sl, r7
+cmp	r4, r3
+bcc	2b
+mov	r2, #0x4e000000
+ldr	r3, [r2, #4]
+orr	r3, r3, #2
+        @NAND_CHIP_DISABLE;
+str	r3, [r2, #4]
+	@ps("\r\nMove U-boot code from nand to Ram done.\r\n");
+adr	r0, done_msg
+bl	ps
+b	test
+        @return 0;
+mov	r0, #0
+pop	{r4, r5, r6, r7, sl, pc}
+wel_mesg:
+.string "\r\n\r\nWelcome use U-boot, compiled by Clean Li.\r\n"
+done_msg:
+.string "\r\nMove U-boot code from nand to Ram done.\r\n"
