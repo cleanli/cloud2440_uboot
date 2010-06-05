@@ -127,7 +127,7 @@
  * Miscellaneous configurable options
  */
 #define	CONFIG_SYS_LONGHELP				/* undef to save memory		*/
-#define	CONFIG_SYS_PROMPT   		"U@Cloud# "	/* Monitor Command Prompt	*/
+#define	CONFIG_SYS_PROMPT   		"U@Cloud # "	/* Monitor Command Prompt	*/
 #define	CONFIG_SYS_CBSIZE		256		/* Console I/O Buffer Size	*/
 #define	CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16) /* Print Buffer Size */
 #define	CONFIG_SYS_MAXARGS		16		/* max number of command args	*/
@@ -214,8 +214,8 @@
 #define CONFIG_SYS_MAX_FLASH_SECT	(4096)	/* max number of sectors on one chip */
 #undef CONFIG_SYS_FLASH_CFI
 #define CONFIG_ENV_IS_IN_NAND
-#define CONFIG_ENV_OFFSET 0x58000
-#define CONFIG_ENV_OFFSET_REDUND 0x5c000
+#define CONFIG_ENV_OFFSET 0x50000
+#define CONFIG_ENV_OFFSET_REDUND 0x54000
 #define CONFIG_ENV_SIZE 0x4000
 #define CONFIG_CLEAN_ENV  1
 

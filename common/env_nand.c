@@ -62,6 +62,8 @@ extern uchar default_environment[];
 
 char * env_name_spec = "NAND";
 
+static u_char tmpchar[CONFIG_ENV_SIZE] ;
+static u_char next_write_page1, next_write_page2;
 
 #if defined(ENV_IS_EMBEDDED)
 extern uchar environment[];
@@ -161,18 +163,18 @@ int env_init(void)
  * The legacy NAND code saved the environment in the first NAND device i.e.,
  * nand_dev_desc + 0. This is also the behaviour using the new NAND code.
  */
-int writeenv(size_t offset, u_char *buf)
+int writeenv(size_t offset, u_char *buf, size_t save_size)
 {
-	size_t end = offset + CONFIG_ENV_RANGE;
+	size_t end = offset + save_size;
 	size_t amount_saved = 0;
 	size_t blocksize, len;
 
 	u_char *char_ptr;
 
 	blocksize = nand_info[0].erasesize;
-	len = min(blocksize, CONFIG_ENV_SIZE);
+	len = min(blocksize, save_size);
 
-	while (amount_saved < CONFIG_ENV_SIZE && offset < end) {
+	while (amount_saved < save_size && offset < end) {
 		if (nand_block_isbad(&nand_info[0], offset)) {
 			offset += blocksize;
 		} else {
@@ -184,18 +186,40 @@ int writeenv(size_t offset, u_char *buf)
 			amount_saved += len;
 		}
 	}
-	if (amount_saved != CONFIG_ENV_SIZE)
+	if (amount_saved != save_size)
 		return 1;
 
 	return 0;
 }
+
+static size_t get_page(size_t n)
+{
+	return (n+511)/512;
+}
+
+static size_t find_env_len(env_t * envp)
+{
+	u_char * up = (u_char*)envp;
+	size_t i = 0;
+	while(1){
+		up++;
+		i++;
+		if(!*up && !*(up-1))
+			return i;
+	}
+}	
+
 #ifdef CONFIG_ENV_OFFSET_REDUND
 int saveenv(void)
 {
 	int ret = 0;
 	nand_erase_options_t nand_erase_options;
+	size_t total;
 
 	env_ptr->flags++;
+	total = find_env_len(env_ptr);
+	memset(tmpchar, 0xff, CONFIG_ENV_SIZE);
+	memcpy(tmpchar, (u_char*)env_ptr, total);
 
 	nand_erase_options.length = CONFIG_ENV_RANGE;
 	nand_erase_options.quiet = 0;
@@ -204,22 +228,34 @@ int saveenv(void)
 
 	if (CONFIG_ENV_RANGE < CONFIG_ENV_SIZE)
 		return 1;
+	if ((total + 1) > CONFIG_ENV_SIZE)
+		return 1;
 	if(gd->env_valid == 1) {
-		puts ("Erasing redundant Nand...\n");
-		nand_erase_options.offset = CONFIG_ENV_OFFSET_REDUND;
-		if (nand_erase_opts(&nand_info[0], &nand_erase_options))
-			return 1;
+		if(total + 1 > CONFIG_ENV_SIZE - next_write_page2 * 512){
+			puts ("Erasing redundant Nand...\n");
+			nand_erase_options.offset = CONFIG_ENV_OFFSET_REDUND;
+			if (nand_erase_opts(&nand_info[0], &nand_erase_options))
+				return 1;
+			next_write_page2 = 0;
+		}
+		tmpchar[total] =  next_write_page2;
 
 		puts ("Writing to redundant Nand... ");
-		ret = writeenv(CONFIG_ENV_OFFSET_REDUND, (u_char *) env_ptr);
+		ret = writeenv(CONFIG_ENV_OFFSET_REDUND + next_write_page2 * 512, tmpchar, 512 * get_page(total + 1));
+		next_write_page2 += get_page(total+1);
 	} else {
-		puts ("Erasing Nand...\n");
-		nand_erase_options.offset = CONFIG_ENV_OFFSET;
-		if (nand_erase_opts(&nand_info[0], &nand_erase_options))
-			return 1;
+		if(total + 1 > CONFIG_ENV_SIZE - next_write_page1 * 512){
+			puts ("Erasing Nand...\n");
+			nand_erase_options.offset = CONFIG_ENV_OFFSET;
+			if (nand_erase_opts(&nand_info[0], &nand_erase_options))
+				return 1;
+			next_write_page1 = 0;
+		}
+		tmpchar[total] =  next_write_page1;
 
 		puts ("Writing to Nand... ");
-		ret = writeenv(CONFIG_ENV_OFFSET, (u_char *) env_ptr);
+		ret = writeenv(CONFIG_ENV_OFFSET+ next_write_page1 * 512, tmpchar, 512 * get_page(total + 1));
+		next_write_page1 += get_page(total+1);
 	}
 	if (ret) {
 		puts("FAILED!\n");
@@ -288,6 +324,27 @@ int readenv (size_t offset, u_char * buf)
 	return 0;
 }
 
+u_char find_env(u_char*tmpchar, env_t *tmpenv)
+{
+	u_char * p = tmpchar + CONFIG_ENV_SIZE;
+	unsigned int offset, len;
+	
+	memset(tmpenv, 0, CONFIG_ENV_SIZE);
+	while((unsigned int)(--p) > (unsigned int)tmpchar){
+		if(*p != 0xff)
+			break;	
+	}
+	offset = 512 * (*p);
+	//this indicate the block not init, need erase
+	if(tmpchar + offset >= p)
+		goto err;
+	len = (unsigned int)(p - tmpchar) - offset;
+	memcpy(tmpenv, tmpchar+offset, len);
+	return offset/512 + get_page(len+1);
+err:
+	return CONFIG_ENV_SIZE/512;
+}
+
 #ifdef CONFIG_ENV_OFFSET_REDUND
 void env_relocate_spec (void)
 {
@@ -298,17 +355,20 @@ void env_relocate_spec (void)
 	tmp_env1 = (env_t *) malloc(CONFIG_ENV_SIZE);
 	tmp_env2 = (env_t *) malloc(CONFIG_ENV_SIZE);
 
-	if ((tmp_env1 == NULL) || (tmp_env2 == NULL)) {
+	if ((tmp_env1 == NULL) || (tmp_env2 == NULL)){ 
 		puts("Can't allocate buffers for environment\n");
 		free (tmp_env1);
 		free (tmp_env2);
 		return use_default();
 	}
 
-	if (readenv(CONFIG_ENV_OFFSET, (u_char *) tmp_env1))
+	if (readenv(CONFIG_ENV_OFFSET, tmpchar))
 		puts("No Valid Environment Area Found\n");
-	if (readenv(CONFIG_ENV_OFFSET_REDUND, (u_char *) tmp_env2))
+	next_write_page1 = find_env(tmpchar, tmp_env1);
+
+	if (readenv(CONFIG_ENV_OFFSET_REDUND, tmpchar))
 		puts("No Valid Reundant Environment Area Found\n");
+	next_write_page2 = find_env(tmpchar, tmp_env2);
 
 	crc1_ok = (crc32(0, tmp_env1->data, ENV_SIZE) == tmp_env1->crc);
 	crc2_ok = (crc32(0, tmp_env2->data, ENV_SIZE) == tmp_env2->crc);
