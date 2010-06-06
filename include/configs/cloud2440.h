@@ -42,6 +42,8 @@
 #define CONFIG_SYS_CLK_FREQ	12000000/* the SMDK2410 has 12MHz input clock */
 
 #define CONFIG_SYS_NO_FLASH 1
+#define CONFIG_CMDLINE_TAG	 1	/* enable passing of ATAGs	*/
+#define CONFIG_SETUP_MEMORY_TAGS 1
 
 #define USE_920T_MMU		0
 #undef CONFIG_USE_IRQ			/* we don't need IRQ/FIQ stuff */
