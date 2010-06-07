@@ -199,15 +199,28 @@ static size_t get_page(size_t n)
 
 static size_t find_env_len(env_t * envp)
 {
-	u_char * up = (u_char*)envp;
+	u_char * up = (u_char*)envp + CONFIG_ENV_SIZE - 1;
 	size_t i = 0;
-	while(1){
-		up++;
+	while(i < CONFIG_ENV_SIZE){
+		if(*up)
+			return CONFIG_ENV_SIZE - i;
+		up--;
 		i++;
-		if(!*up && !*(up-1))
-			return i;
 	}
+	return 0;
 }	
+
+void memprint(char*s, int len)
+{
+	int i = 0;
+	while(len--){
+		if((i++ & 0x0f) == 0)
+			printf("\n");
+		printf("%02x ", *s++);
+
+	}
+	printf("\n");
+}
 
 #ifdef CONFIG_ENV_OFFSET_REDUND
 int saveenv(void)
@@ -218,6 +231,7 @@ int saveenv(void)
 
 	env_ptr->flags++;
 	total = find_env_len(env_ptr);
+	//memprint(env_ptr, total+0x100);
 	memset(tmpchar, 0xff, CONFIG_ENV_SIZE);
 	memcpy(tmpchar, (u_char*)env_ptr, total);
 
@@ -241,6 +255,7 @@ int saveenv(void)
 		tmpchar[total] =  next_write_page2;
 
 		puts ("Writing to redundant Nand... ");
+		printf("nand offset %x size %x\n", CONFIG_ENV_OFFSET_REDUND + next_write_page2 * 512,512 * get_page(total + 1));
 		ret = writeenv(CONFIG_ENV_OFFSET_REDUND + next_write_page2 * 512, tmpchar, 512 * get_page(total + 1));
 		next_write_page2 += get_page(total+1);
 	} else {
@@ -254,6 +269,7 @@ int saveenv(void)
 		tmpchar[total] =  next_write_page1;
 
 		puts ("Writing to Nand... ");
+		printf("nand offset %x size %x\n", CONFIG_ENV_OFFSET + next_write_page1 * 512,512 * get_page(total + 1));
 		ret = writeenv(CONFIG_ENV_OFFSET+ next_write_page1 * 512, tmpchar, 512 * get_page(total + 1));
 		next_write_page1 += get_page(total+1);
 	}
@@ -335,13 +351,16 @@ u_char find_env(u_char*tmpchar, env_t *tmpenv)
 			break;	
 	}
 	offset = 512 * (*p);
+	printf("find effective env at offset %x ", offset);
 	//this indicate the block not init, need erase
 	if(tmpchar + offset >= p)
 		goto err;
 	len = (unsigned int)(p - tmpchar) - offset;
+	printf("len %x\n", len);
 	memcpy(tmpenv, tmpchar+offset, len);
 	return offset/512 + get_page(len+1);
 err:
+	printf("error in env\n");
 	return CONFIG_ENV_SIZE/512;
 }
 
@@ -362,10 +381,12 @@ void env_relocate_spec (void)
 		return use_default();
 	}
 
+	printf("Check %x: ", CONFIG_ENV_OFFSET);
 	if (readenv(CONFIG_ENV_OFFSET, tmpchar))
 		puts("No Valid Environment Area Found\n");
 	next_write_page1 = find_env(tmpchar, tmp_env1);
 
+	printf("Check %x: ", CONFIG_ENV_OFFSET_REDUND);
 	if (readenv(CONFIG_ENV_OFFSET_REDUND, tmpchar))
 		puts("No Valid Reundant Environment Area Found\n");
 	next_write_page2 = find_env(tmpchar, tmp_env2);
