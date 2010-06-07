@@ -393,7 +393,18 @@ void main_loop (void)
 	}
 	else
 #endif /* CONFIG_BOOTCOUNT_LIMIT */
+	{
 		s = getenv ("bootcmd");
+		if(s == NULL){
+			char tmps[128];
+			s = getenv ("bootchoose");
+			if(s == NULL)
+				s = "1";
+			sprintf(tmps, "bootcmd%s", s);
+			s = getenv (tmps);
+		}
+
+	}
 
 	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
 

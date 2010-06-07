@@ -1036,9 +1036,37 @@ int do_bootd (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	return rcode;
 }
 
+int do_bootchoose (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	int rcode = 0;
+	char *cmd, *s, tmps[128];
+
+	if(argc != 1)
+		goto specific;
+	cmd = getenv ("bootcmd");
+        if(!cmd){
+		s = getenv("bootchoose");
+		if (!s)
+			s = "1";
+		sprintf(tmps, "bootcmd%s", s);
+		cmd = getenv (tmps);
+	}
+	goto runcmd;
+
+specific:
+	sprintf(tmps, "bootcmd%s", argv[1]);
+	cmd = getenv (tmps);
+	setenv("bootchoose", argv[1]);
+
+runcmd:
+	if (run_command (cmd, flag) < 0)
+		rcode = 1;
+	return rcode;
+}
+
 U_BOOT_CMD(
-	boot,	1,	1,	do_bootd,
-	"boot default, i.e., run 'bootcmd'",
+	boot,	2,	1,	do_bootchoose,
+	"boot different choose, i.e., run 'boot 2'",
 	""
 );
 
