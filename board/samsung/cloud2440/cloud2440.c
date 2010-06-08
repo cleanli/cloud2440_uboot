@@ -106,6 +106,20 @@ int board_init (void)
 	gpio->GPHCON = 0x002AFAAA;
 	gpio->GPHUP = 0x000007FF;
 
+	/*init framebuffer*/
+	*(volatile unsigned int *)0x4d000060 = 0xf82;
+	*(volatile unsigned int *)0x4d00001c = 0x140;
+	*(volatile unsigned int *)0x4d000018 = 0x12c00;
+	*(volatile unsigned int *)0x4d000014 = 0x19800000;
+	*(volatile unsigned int *)0x4d000010 = 0x14b09;
+	*(volatile unsigned int *)0x4d00000c = 0x2b;
+	*(volatile unsigned int *)0x4d000008 = 0xa13f00;
+	*(volatile unsigned int *)0x4d000004 = 0x33bc14f;
+	*(volatile unsigned int *)0x4d000000 = 0x3180778;
+	*(volatile unsigned int *)0x4d000000 = 0x3180779;
+
+	memset(0x33000000, 0x44, 0x25800);
+
 	/* arch number of CLOUD2440-Board */
 	gd->bd->bi_arch_number = MACH_TYPE_CLOUD2440;
 
