@@ -92,6 +92,7 @@ int board_init (void)
 	gpio->GPACON = 0x007FFFFF;
 	gpio->GPBCON = 0x00044555;
 	gpio->GPBUP = 0x000007FF;
+	*/
 	gpio->GPCCON = 0xAAAAAAAA;
 	gpio->GPCUP = 0x0000FFFF;
 	gpio->GPDCON = 0xAAAAAAAA;
@@ -100,11 +101,10 @@ int board_init (void)
 	gpio->GPEUP = 0x0000FFFF;
 	gpio->GPFCON = 0x000055AA;
 	gpio->GPFUP = 0x000000FF;
-	gpio->GPGCON = 0xFF95FFBA;
 	gpio->GPGUP = 0x0000FFFF;
+	gpio->GPGCON = 0x300;
 	gpio->GPHCON = 0x002AFAAA;
 	gpio->GPHUP = 0x000007FF;
-	*/
 
 	/* arch number of CLOUD2440-Board */
 	gd->bd->bi_arch_number = MACH_TYPE_CLOUD2440;
