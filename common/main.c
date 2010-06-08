@@ -398,8 +398,6 @@ void main_loop (void)
 		if(s == NULL){
 			char tmps[128];
 			s = getenv ("bootchoose");
-			if(s == NULL)
-				s = "1";
 			sprintf(tmps, "bootcmd%s", s);
 			s = getenv (tmps);
 		}
