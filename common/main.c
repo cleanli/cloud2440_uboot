@@ -30,6 +30,7 @@
 #include <common.h>
 #include <watchdog.h>
 #include <command.h>
+#include <draw.h>
 #ifdef CONFIG_MODEM_SUPPORT
 #include <malloc.h>		/* for free() prototype */
 #endif
@@ -214,11 +215,14 @@ static int menukey = 0;
 static __inline__ int abortboot(int bootdelay)
 {
 	int abort = 0;
+	char str_buf[128];
 
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT);
 #else
 	printf("Hit any key to stop autoboot: %2d ", bootdelay);
+	sprintf(str_buf, "Hit any key to stop autoboot: %2d ", bootdelay);
+	video_drawstring(5,15, str_buf);
 #endif
 
 #if defined CONFIG_ZERO_BOOTDELAY_CHECK
@@ -255,6 +259,8 @@ static __inline__ int abortboot(int bootdelay)
 		}
 
 		printf("\b\b\b%2d ", bootdelay);
+		sprintf(str_buf, "Hit any key to stop autoboot: %2d ", bootdelay);
+		video_drawstring(5,15, str_buf);
 	}
 
 	putc('\n');
