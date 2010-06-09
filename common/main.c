@@ -91,6 +91,25 @@ int do_mdm_init = 0;
 extern void mdm_init(void); /* defined in board.c */
 #endif
 
+void screen_control()
+{
+	int i = 1, posy = 30;
+	char str_tmp[128], *s;
+
+	clear_screen();
+	while(1){
+		sprintf(str_tmp, "bootname%d", i);
+		s = getenv(str_tmp);
+		if(!s)
+			break;
+		sprintf(str_tmp, "%d %s", i, s);
+		video_drawstring(30, posy, str_tmp);
+		i++;
+		posy += 20;
+	}
+	video_drawstring(5,5,"Please choose one to boot:");
+	while(1);
+}
 /***************************************************************************
  * Watch for 'delay' seconds for autoboot stop or autoboot delay string.
  * returns: 0 -  no key string, allow autoboot
@@ -214,15 +233,16 @@ static int menukey = 0;
 
 static __inline__ int abortboot(int bootdelay)
 {
-	int abort = 0;
-	char str_buf[128];
+	int abort = 0, bootdelay_bak=bootdelay;
+	char str_buf[128], key;
 
+restart_autoboot:
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT);
 #else
 	printf("Hit any key to stop autoboot: %2d ", bootdelay);
 	sprintf(str_buf, "Hit any key to stop autoboot: %2d ", bootdelay);
-	video_drawstring(5,15, str_buf);
+	video_drawstring(5,22, str_buf);
 #endif
 
 #if defined CONFIG_ZERO_BOOTDELAY_CHECK
@@ -255,12 +275,28 @@ static __inline__ int abortboot(int bootdelay)
 # endif
 				break;
 			}
+			if (key = get_keypress()){
+				printf("get key %d\n", key);
+				if(key == OK_KEY){
+					puts("The screen and key set to autoboot at once! Let's go!\n");
+					abort = 0;
+					bootdelay = 0;
+					break;
+				}
+				else{
+					puts("The screen and key get control!\n");
+					screen_control();
+					puts("The screen and key release control!\n");
+					bootdelay = bootdelay_bak;
+					goto restart_autoboot;
+				}
+			}
 			udelay(10000);
 		}
 
 		printf("\b\b\b%2d ", bootdelay);
 		sprintf(str_buf, "Hit any key to stop autoboot: %2d ", bootdelay);
-		video_drawstring(5,15, str_buf);
+		video_drawstring(5,22, str_buf);
 	}
 
 	putc('\n');

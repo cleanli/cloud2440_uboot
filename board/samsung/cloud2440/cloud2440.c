@@ -26,6 +26,7 @@
  */
 
 #include <common.h>
+#include <draw.h>
 #include <netdev.h>
 #include <asm/arch/s3c24x0_cpu.h>
 
@@ -103,7 +104,7 @@ int board_init (void)
 	gpio->GPDUP = 0x0000FFFF;
 	gpio->GPECON = 0xAAAAAAAA;
 	gpio->GPEUP = 0x0000FFFF;
-	gpio->GPFCON = 0x000055AA;
+	gpio->GPFCON = 0x00005500;
 	gpio->GPFUP = 0x000000FF;
 	gpio->GPGUP = 0x0000FFFF;
 	gpio->GPGCON = 0x300;
@@ -415,6 +416,31 @@ void clear_screen()
 	u32 *pp;
 	for(pp = (u32*)0x33000000; (u32)pp < 0x33025800;pp++)
 		*pp = bgx;
+
+}
+
+#define GPIO_F_DATA (*(unsigned int*)0x56000054)
+#define GPIO_G_DATA (*(unsigned int*)0x56000064)
+int get_keypress()
+{
+	int key = 0;
+	if((GPIO_F_DATA & 0xf) != 0xf || ((GPIO_G_DATA & 0x808) != 0x808)){
+		udelay(10000);
+		if((GPIO_F_DATA & 0x1) == 0)
+			key = UP_KEY;
+		if((GPIO_F_DATA & 0x2) == 0)
+			key = DOWN_KEY;
+		if((GPIO_F_DATA & 0x4) == 0)
+			key = LEFT_KEY;
+		if((GPIO_F_DATA & 0x8) == 0)
+			key = LEFT_KEY;
+		if((GPIO_G_DATA & 0x8) == 0)
+			key = CANCEL_KEY;
+		if((GPIO_G_DATA & 0x800) == 0)
+			key = OK_KEY;
+
+	}
+	return key;
 
 }
 /*****************************************************************************/
