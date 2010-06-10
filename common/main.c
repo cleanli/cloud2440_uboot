@@ -93,14 +93,17 @@ extern void mdm_init(void); /* defined in board.c */
 
 void screen_control()
 {
-	int i = 1, posy = 30, bootchoose, tmp_bootchoose, key;
+	int i = 1, j, posy = 30, bootchoose, tmp_bootchoose, key;
 	char str_tmp[128], *s;
 
 	s = getenv ("bootchoose");
 	bootchoose = s ? (int)simple_strtol(s, NULL, 10) : 1;
 	tmp_bootchoose = bootchoose;
 	clear_screen();
-	video_drawstring(5,5,"Please choose one to boot:");
+	lcd_printf(15,5,"Please choose one to boot:");
+	lcd_printf(15,220,"Up  Down Left Right Ok Cancel");
+	lcd_printf(15,200,"o    o    o    o    o    o  ");
+	lcd_printf(15,185,"_______________________________ ");
 draw_menu:
 	posy = 30;
 	i = 1;
@@ -117,8 +120,9 @@ draw_menu:
 		i++;
 		posy += 20;
 	}
-	while(!(key = get_keypress()));
+	set_draw_color(0xa0, 0);
 	udelay(300000);
+	while(!(key = get_keypress()));
 	printf("get key %d\n", key);
 	if(key == UP_KEY || key == LEFT_KEY){
 		tmp_bootchoose --;
@@ -132,19 +136,58 @@ draw_menu:
 		       tmp_bootchoose = 1;	
 		goto draw_menu;
 	}
-	if(key == CANCEL_KEY)
+	if(key == CANCEL_KEY){
+		lcd_printf(15,170,"Back to Uboot auto-boot...");
+		udelay(1000000);
 		goto end;
+	}
 	if(key == OK_KEY){
 		sprintf(str_tmp, "bootcmd%d", tmp_bootchoose);
 		s = getenv(str_tmp);
 		if(!s){
 			printf("boot setting error! The bootcmd of index %d not set\n", tmp_bootchoose);
+			lcd_printf(15,170,"boot setting error");
+			udelay(1000000);
 			goto end;
 		}
+		sprintf(str_tmp, "%d", tmp_bootchoose);
+		setenv("bootchoose", str_tmp);
+
+		udelay(500000);
+		if(tmp_bootchoose != bootchoose){
+			i = 6;
+			lcd_printf(15,130,"Save boot choose %d to env?", tmp_bootchoose);
+			key = 0;
+			while(i--){
+				lcd_printf(15,150,"%d seconds left", i);
+				j = 100;
+				while(j--){
+					udelay(10000);
+					if(key = get_keypress()){
+						if(key == OK_KEY){
+							lcd_printf(15,130,"boot choose %d saved         ", tmp_bootchoose);
+							saveenv();
+						}
+						else
+							lcd_printf(15,130,"boot choose %d no need save", tmp_bootchoose);
+						i=0;
+						j=0;
+					}
+				}	
+			}
+			if(key != OK_KEY){
+				lcd_printf(15,130,"boot choose %d no need save", tmp_bootchoose);
+			}
+		}
+		lcd_printf(15,150,"booting option %d       ", tmp_bootchoose);
+		udelay(1000000);
+		//while(1);
 		run_command (s, 0);
 	}
 end:
+	udelay(1000000);
 	clear_screen();
+	//while(1);
 	return;
 }
 /***************************************************************************

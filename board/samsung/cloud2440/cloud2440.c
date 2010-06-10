@@ -453,9 +453,9 @@ int get_keypress()
 		if((GPIO_F_DATA & 0x8) == 0)
 			key = LEFT_KEY;
 		if((GPIO_G_DATA & 0x8) == 0)
-			key = CANCEL_KEY;
-		if((GPIO_G_DATA & 0x800) == 0)
 			key = OK_KEY;
+		if((GPIO_G_DATA & 0x800) == 0)
+			key = CANCEL_KEY;
 
 	}
 	return key;
