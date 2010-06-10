@@ -93,22 +93,59 @@ extern void mdm_init(void); /* defined in board.c */
 
 void screen_control()
 {
-	int i = 1, posy = 30;
+	int i = 1, posy = 30, bootchoose, tmp_bootchoose, key;
 	char str_tmp[128], *s;
 
+	s = getenv ("bootchoose");
+	bootchoose = s ? (int)simple_strtol(s, NULL, 10) : 1;
+	tmp_bootchoose = bootchoose;
 	clear_screen();
+	video_drawstring(5,5,"Please choose one to boot:");
+draw_menu:
+	udelay(100000);
+	posy = 30;
+	i = 1;
 	while(1){
 		sprintf(str_tmp, "bootname%d", i);
 		s = getenv(str_tmp);
 		if(!s)
 			break;
-		sprintf(str_tmp, "%d %s", i, s);
-		video_drawstring(30, posy, str_tmp);
+		if(i == tmp_bootchoose)
+			set_draw_color(0xa0, 0x50);
+		else
+			set_draw_color(0xa0, 0);
+		lcd_printf(30, posy, "%d %s", i, s);
 		i++;
 		posy += 20;
 	}
-	video_drawstring(5,5,"Please choose one to boot:");
-	while(1);
+	while(!(key = get_keypress()));
+	printf("get key %d\n", key);
+	if(key == UP_KEY || key == LEFT_KEY){
+		tmp_bootchoose --;
+		if(!tmp_bootchoose)
+		       tmp_bootchoose = i-1;	
+		goto draw_menu;
+	}
+	if(key == DOWN_KEY || key == RIGHT_KEY){
+		tmp_bootchoose ++;
+		if(tmp_bootchoose == i)
+		       tmp_bootchoose = 1;	
+		goto draw_menu;
+	}
+	if(key == CANCEL_KEY)
+		goto end;
+	if(key == OK_KEY){
+		sprintf(str_tmp, "bootcmd%d", tmp_bootchoose);
+		s = getenv(str_tmp);
+		if(!s){
+			printf("boot setting error! The bootcmd of index %d not set\n", tmp_bootchoose);
+			goto end;
+		}
+		run_command (s, 0);
+	}
+end:
+	clear_screen();
+	return;
 }
 /***************************************************************************
  * Watch for 'delay' seconds for autoboot stop or autoboot delay string.
@@ -234,15 +271,14 @@ static int menukey = 0;
 static __inline__ int abortboot(int bootdelay)
 {
 	int abort = 0, bootdelay_bak=bootdelay;
-	char str_buf[128], key;
+	char key;
 
 restart_autoboot:
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT);
 #else
 	printf("Hit any key to stop autoboot: %2d ", bootdelay);
-	sprintf(str_buf, "Hit any key to stop autoboot: %2d ", bootdelay);
-	video_drawstring(5,22, str_buf);
+	lcd_printf(5, 22, "Hit any key to stop autoboot: %2d ", bootdelay);
 #endif
 
 #if defined CONFIG_ZERO_BOOTDELAY_CHECK
@@ -295,8 +331,7 @@ restart_autoboot:
 		}
 
 		printf("\b\b\b%2d ", bootdelay);
-		sprintf(str_buf, "Hit any key to stop autoboot: %2d ", bootdelay);
-		video_drawstring(5,22, str_buf);
+		lcd_printf(5, 22, "Hit any key to stop autoboot: %2d ", bootdelay);
 	}
 
 	putc('\n');

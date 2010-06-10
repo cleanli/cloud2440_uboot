@@ -286,6 +286,7 @@ static int video_init (void)
 	video_fb_address = (void *) VIDEO_FB_ADRS;
 
 	set_draw_color(CONSOLE_FG_COL, CONSOLE_BG_COL);  
+	clear_screen();
 
 	return 0;
 }
@@ -408,6 +409,8 @@ static void video_drawchars (int xx, int yy, char *s, int count)
 
 void video_drawstring (int xx, int yy, char *s)
 {
+	//printf("lcd printing:%s\n",s);
+	//getc();
 	video_drawchars (xx, yy, s, strlen ((char *)s));
 }
 
@@ -419,13 +422,28 @@ void clear_screen()
 
 }
 
+void lcd_printf(int x, int y, const char *fmt, ...)
+{
+	va_list args;
+	uint i;
+	char printbuffer[128];
+
+	va_start(args, fmt);
+
+	i = vsprintf(printbuffer, fmt, args);
+	va_end(args);
+
+	/* Print the string */
+	video_drawstring (x, y, printbuffer);
+}
+
 #define GPIO_F_DATA (*(unsigned int*)0x56000054)
 #define GPIO_G_DATA (*(unsigned int*)0x56000064)
 int get_keypress()
 {
 	int key = 0;
 	if((GPIO_F_DATA & 0xf) != 0xf || ((GPIO_G_DATA & 0x808) != 0x808)){
-		udelay(10000);
+		udelay(50000);
 		if((GPIO_F_DATA & 0x1) == 0)
 			key = UP_KEY;
 		if((GPIO_F_DATA & 0x2) == 0)
@@ -440,6 +458,7 @@ int get_keypress()
 			key = OK_KEY;
 
 	}
+	udelay(200000);
 	return key;
 
 }
