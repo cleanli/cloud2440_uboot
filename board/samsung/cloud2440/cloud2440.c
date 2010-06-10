@@ -112,7 +112,7 @@ int board_init (void)
 	gpio->GPHUP = 0x000007FF;
 
 	video_init();
-	video_drawstring(5,5,"Welcome to use cloud2440 U-boot!"); 
+	video_drawstring(15,5,"Welcome to use cloud2440 U-boot!"); 
 
 	/* arch number of CLOUD2440-Board */
 	gd->bd->bi_arch_number = MACH_TYPE_CLOUD2440;
@@ -458,7 +458,6 @@ int get_keypress()
 			key = OK_KEY;
 
 	}
-	udelay(200000);
 	return key;
 
 }

@@ -102,7 +102,6 @@ void screen_control()
 	clear_screen();
 	video_drawstring(5,5,"Please choose one to boot:");
 draw_menu:
-	udelay(100000);
 	posy = 30;
 	i = 1;
 	while(1){
@@ -119,6 +118,7 @@ draw_menu:
 		posy += 20;
 	}
 	while(!(key = get_keypress()));
+	udelay(300000);
 	printf("get key %d\n", key);
 	if(key == UP_KEY || key == LEFT_KEY){
 		tmp_bootchoose --;
@@ -278,7 +278,7 @@ restart_autoboot:
 	printf(CONFIG_MENUPROMPT);
 #else
 	printf("Hit any key to stop autoboot: %2d ", bootdelay);
-	lcd_printf(5, 22, "Hit any key to stop autoboot: %2d ", bootdelay);
+	lcd_printf(15, 22, "Hit any key to stop autoboot: %2d ", bootdelay);
 #endif
 
 #if defined CONFIG_ZERO_BOOTDELAY_CHECK
@@ -331,7 +331,7 @@ restart_autoboot:
 		}
 
 		printf("\b\b\b%2d ", bootdelay);
-		lcd_printf(5, 22, "Hit any key to stop autoboot: %2d ", bootdelay);
+		lcd_printf(15, 22, "Hit any key to stop autoboot: %2d ", bootdelay);
 	}
 
 	putc('\n');
