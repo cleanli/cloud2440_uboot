@@ -103,7 +103,7 @@ void screen_control()
 	lcd_printf(15,5,"Please choose one to boot:");
 	lcd_printf(15,220,"Up  Down Left Right Ok Cancel");
 	lcd_printf(15,200,"o    o    o    o    o    o  ");
-	lcd_printf(15,185,"_______________________________ ");
+	lcd_printf(15,185,"_____________________________ ");
 draw_menu:
 	posy = 30;
 	i = 1;
@@ -142,20 +142,13 @@ draw_menu:
 		goto end;
 	}
 	if(key == OK_KEY){
-		sprintf(str_tmp, "bootcmd%d", tmp_bootchoose);
-		s = getenv(str_tmp);
-		if(!s){
-			printf("boot setting error! The bootcmd of index %d not set\n", tmp_bootchoose);
-			lcd_printf(15,170,"boot setting error");
-			udelay(1000000);
-			goto end;
-		}
 		sprintf(str_tmp, "%d", tmp_bootchoose);
 		setenv("bootchoose", str_tmp);
 
 		udelay(500000);
 		if(tmp_bootchoose != bootchoose){
-			i = 6;
+			s = getenv ("bootsavedelay");
+			i = s ? (int)simple_strtol(s, NULL, 10) : 9;
 			lcd_printf(15,130,"Save boot choose %d to env?", tmp_bootchoose);
 			key = 0;
 			while(i--){
@@ -178,6 +171,15 @@ draw_menu:
 			if(key != OK_KEY){
 				lcd_printf(15,130,"boot choose %d no need save", tmp_bootchoose);
 			}
+		}
+
+		sprintf(str_tmp, "bootcmd%d", tmp_bootchoose);
+		s = getenv(str_tmp);
+		if(!s){
+			printf("boot setting error! The bootcmd of index %d not set\n", tmp_bootchoose);
+			lcd_printf(15,170,"boot setting error");
+			udelay(1000000);
+			goto end;
 		}
 		lcd_printf(15,150,"booting option %d       ", tmp_bootchoose);
 		udelay(1000000);
