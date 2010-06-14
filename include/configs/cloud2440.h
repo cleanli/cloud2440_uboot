@@ -47,6 +47,7 @@
 
 #define USE_920T_MMU		0
 #undef CONFIG_USE_IRQ			/* we don't need IRQ/FIQ stuff */
+#define CONFIG_SKIP_RELOCATE_UBOOT
 
 /*
  * Size of malloc() pool

@@ -635,8 +635,10 @@ fiq:
 lowlevel_init:
 	/* memory control configuration */
         ldr     r0, =SMRDATA
+#ifndef CONFIG_SKIP_RELOCATE_UBOOT
 	ldr	r1, _TEXT_BASE
 	sub	r0, r0, r1
+#endif
 	ldr	r1, =BWSCON	/* Bus Width Status Controller */
 	add     r2, r0, #13*4
 0:
