@@ -110,8 +110,8 @@ SMRDATA:
         .long   0x00000700
         .long   0x00000700
         .long   0x00000700
-        .long   0x00018009
-        .long   0x00018009
+        .long   0x0001800a
+        .long   0x0001800a
         .long   0x00ac03f4
         .long   0x000000b2
         .long   0x00000030
