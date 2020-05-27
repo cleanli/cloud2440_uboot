@@ -30,6 +30,7 @@
 #include <net.h>
 #include <exports.h>
 #include <xyzModem.h>
+#include <sha256.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -49,6 +50,23 @@ static int do_echo = 1;
 #endif
 
 /* -------------------------------------------------------------------- */
+
+uint8_t result[SHA256_SUM_LEN];
+void show_sha256sum(unsigned long addr, uint32_t size)
+{
+	int i;
+	sha256_context my_ctx;
+	sha256_starts(&my_ctx);
+	sha256_update(&my_ctx, (uint8_t*)addr, size);
+	sha256_finish(&my_ctx, result);
+
+	printf("sha256 digest of addr %08lX size %x:\r\n", addr, size);
+	for(i=0;i<SHA256_SUM_LEN;i++){
+		printf("%02x", result[i]&0xff);
+	}
+	printf("\n");
+	return;
+}
 
 #if defined(CONFIG_CMD_LOADS)
 int do_load_serial (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
@@ -200,6 +218,7 @@ load_serial (long offset)
 		    flush_cache (start_addr, size);
 		    sprintf(buf, "%lX", size);
 		    setenv("filesize", buf);
+		    show_sha256sum(start_addr, size);
 		    return (addr);
 		case SREC_START:
 		    break;
@@ -542,6 +561,7 @@ static ulong load_serial_bin (ulong offset)
 	printf("## Total Size      = 0x%08x = %d Bytes\n", size, size);
 	sprintf(buf, "%X", size);
 	setenv("filesize", buf);
+	show_sha256sum(offset, size);
 
 	return offset;
 }
@@ -1015,6 +1035,7 @@ static ulong load_serial_ymodem (ulong offset)
 	printf ("## Total Size      = 0x%08x = %d Bytes\n", size, size);
 	sprintf (buf, "%X", size);
 	setenv ("filesize", buf);
+	show_sha256sum(store_addr, size);
 
 	return offset;
 }
@@ -1116,4 +1137,25 @@ U_BOOT_CMD(
 	"[on|off]"
 );
 
+int mem_sha256sum (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	long addr, size;
+	if (argc == 3) {
+		addr = simple_strtol(argv[1], NULL, 16);
+		size = simple_strtol(argv[2], NULL, 16);
+		show_sha256sum(addr, size);
+	}
+	else{
+		printf("Para error! Should followed with mem addr 'addr' and mem size 'size'\r\n");
+	}
+	return 0;
+}
+
+U_BOOT_CMD(
+	sha256sum, 3, 0,	mem_sha256sum,
+	"compute sha256 of memory",
+	"[ addr ] [ size ]\n"
+	"    compute sha256 of memory"
+	" with mem addr 'addr' and mem size 'size'"
+);
 #endif
