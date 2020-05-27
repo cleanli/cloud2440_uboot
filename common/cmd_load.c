@@ -1035,7 +1035,7 @@ static ulong load_serial_ymodem (ulong offset)
 	printf ("## Total Size      = 0x%08x = %d Bytes\n", size, size);
 	sprintf (buf, "%X", size);
 	setenv ("filesize", buf);
-	show_sha256sum(store_addr, size);
+	show_sha256sum(offset, size);
 
 	return offset;
 }
@@ -1111,6 +1111,28 @@ U_BOOT_CMD(
 
 /* -------------------------------------------------------------------- */
 
+int mem_sha256sum (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	long addr, size;
+	if (argc == 3) {
+		addr = simple_strtol(argv[1], NULL, 16);
+		size = simple_strtol(argv[2], NULL, 16);
+		show_sha256sum(addr, size);
+	}
+	else{
+		printf("Para error! Should followed with mem addr 'addr' and mem size 'size'\r\n");
+	}
+	return 0;
+}
+
+U_BOOT_CMD(
+	sha256sum, 3, 0,	mem_sha256sum,
+	"compute sha256 of memory",
+	"[ addr ] [ size ]\n"
+	"    compute sha256 of memory"
+	" with mem addr 'addr' and mem size 'size'"
+);
+
 #if defined(CONFIG_CMD_HWFLOW)
 int do_hwflow (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
@@ -1135,27 +1157,5 @@ U_BOOT_CMD(
 	hwflow, 2, 0,	do_hwflow,
 	"turn RTS/CTS hardware flow control in serial line on/off",
 	"[on|off]"
-);
-
-int mem_sha256sum (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
-{
-	long addr, size;
-	if (argc == 3) {
-		addr = simple_strtol(argv[1], NULL, 16);
-		size = simple_strtol(argv[2], NULL, 16);
-		show_sha256sum(addr, size);
-	}
-	else{
-		printf("Para error! Should followed with mem addr 'addr' and mem size 'size'\r\n");
-	}
-	return 0;
-}
-
-U_BOOT_CMD(
-	sha256sum, 3, 0,	mem_sha256sum,
-	"compute sha256 of memory",
-	"[ addr ] [ size ]\n"
-	"    compute sha256 of memory"
-	" with mem addr 'addr' and mem size 'size'"
 );
 #endif
