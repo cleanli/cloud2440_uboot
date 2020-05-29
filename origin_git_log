@@ -1,0 +1,46 @@
+commit 9bb3b3d4406c1e388a99f6fb189147d6a06cc2cf (origin/master)
+Merge: a81cd434b 3057c6be5
+Author: Wolfgang Denk <wd@denx.de>
+Date:   Sun May 30 21:44:07 2010 +0200
+
+    Merge branch 'master' of git://git.denx.de/u-boot-mpc85xx
+
+commit a81cd434b95a9884c9b4db1dbb53e9d460d36cb2
+Merge: bd7bb6f8a 39c209546
+Author: Wolfgang Denk <wd@denx.de>
+Date:   Sun May 30 21:43:05 2010 +0200
+
+    Merge branch 'master' of git://git.denx.de/u-boot-arm
+
+commit 3057c6be5efda781a72ca04432e0a4ed6e670030
+Author: Kim Phillips <kim.phillips@freescale.com>
+Date:   Fri Apr 23 12:20:11 2010 -0500
+
+    fdt_support: add entry for sec3.1 and fix sec3.3
+    
+    Add sec3.1 h/w geometry for fdt node fixups.
+    
+    Also, technically, whilst SEC v3.3 h/w honours the tls_ssl_stream descriptor
+    type, it lacks the ARC4 algorithm execution unit required to be able
+    to execute anything meaningful with it.  Change the node to agree with
+    the documentation that declares that the sec3.3 really doesn't have such
+    a descriptor type.
+    
+    Reported-by: Haiying Wang <Haiying.Wang@freescale.com>
+    Signed-off-by: Kim Phillips <kim.phillips@freescale.com>
+    Signed-off-by: Kumar Gala <galak@kernel.crashing.org>
+
+commit 5f4d36825a028e300b7d56a566d2cf84418b7a68
+Author: Timur Tabi <timur@freescale.com>
+Date:   Thu May 20 11:16:16 2010 -0500
+
+    fsl: rename 'dma' to 'brdcfg1' in the ngPIXIS structure
+    
+    The ngPIXIS is a board-specific FPGA, but the definition of the registers
+    is mostly consistent.  On boards where it matter, register 9 is called
+    'brdcfg1' instead of 'dma', so rename the variable in the ngpixis_t
+    definition.
+    
+    Signed-off-by: Timur Tabi <timur@freescale.com>
+    Signed-off-by: Kumar Gala <galak@kernel.crashing.org>
+
