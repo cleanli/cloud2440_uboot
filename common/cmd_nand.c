@@ -681,3 +681,138 @@ U_BOOT_CMD(nboot, 4, 1, do_nandboot,
 	"boot from NAND device",
 	"[partition] | [[[loadAddr] dev] offset]"
 );
+
+void nand_reset();
+int ll_nand_read(unsigned char *buf, unsigned long start_addr, int size);
+#define ERASE_BLOCK_ADDR_MASK (512 * 32 -1)
+int ll_nand_erase(uint addr);
+int ll_nand_write(unsigned char *buf, unsigned long start_addr, int size);
+
+int memcopy (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	long addrdest, addrsrc, size;
+	if (argc == 4) {
+		addrdest = simple_strtol(argv[1], NULL, 16);
+		addrsrc = simple_strtol(argv[2], NULL, 16);
+		size = simple_strtol(argv[3], NULL, 16);
+        memcpy((char*)addrdest, (char*)addrsrc, size);
+        printf("cp size 0x%lx from addr %lx to 0x%lx done!\r\n",
+                size, addrsrc,addrdest);
+	}
+	else{
+		printf("Para error! Should followed with dest mem addr 'addr'"
+               " and source addr & mem size 'size'\r\n");
+	}
+	return 0;
+}
+
+int nandcp(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	long addrdest, addrnand, size;
+    uint32_t pages;
+	if (argc == 4) {
+        addrdest = simple_strtol(argv[1], NULL, 16);
+        addrnand = simple_strtol(argv[2], NULL, 16);
+        size = simple_strtol(argv[3], NULL, 16);
+        pages = size/512;
+
+        nand_reset();
+        ll_nand_read((unsigned char*)addrdest, addrnand, 512 * pages);
+        printf("cp size 0x%lx(0x%x pages) from nand addr %lx to memory 0x%lx done!\r\n",
+                size, pages,addrnand,addrdest);
+    }
+    else{
+        printf("Para error! Should followed with dest mem addr 'addr'"
+                " and nand addr & size 'size'\r\n");
+    }
+    return 0;
+}
+
+int nander(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+#if 0
+    uint addr, tmp, size, n;
+
+    tmp = get_howmany_para(p);
+    if(tmp != 2)
+        goto error;
+    p = str_to_hex(p, &addr);
+    p = str_to_hex(p, &size);
+    if(addr%0x4000 != 0){
+        printf("addr must be 0x4000 x n\r\n");
+        goto error;
+    }
+    if(size%0x4000 != 0){
+        printf("size must be 0x4000 x n\r\n");
+        goto error;
+    }
+    n = size/0x4000;
+cp:
+    nand_reset();
+    while(n--){
+        if(nand_erase_ll(addr)){
+            printf("erase error\r\n");
+        }
+        else{
+            printf("erase nand block 0x%x done!\r\n",addr);
+        }
+        addr+=0x4000;
+    }
+    return;
+
+error:
+    printf("Error para!\r\nnander (hex block addr) (hex size)\r\n");
+#endif
+    return 0;
+
+}
+
+int nandpp(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+#if 0
+    uint addr, pages, tmp, size;
+
+    tmp = get_howmany_para(p);
+    if(tmp != 2)
+        goto error;
+    p = str_to_hex(p, &addr);
+    str_to_hex(p, &size);
+    if(size%512 != 0){
+        printff("size should be 512*n\r\n");
+        goto error;
+    }
+    pages = size/512;
+    addr = addr & 0xfffffe00;
+
+    nand_reset();
+    if(nand_write_ll((unsigned char*)mrw_addr, addr, 512 * pages)){
+	printf("failed\r\n");
+	return;
+    }
+    printf("program 0x%x pages:size %x from memory 0x%x to nand addr %x done!\r\n",
+            pages,size,mrw_addr,addr);
+    return;
+
+error:
+    printf("Error para!\r\nnandcp (hex addr) (hex size)\r\n");
+#endif
+    return 0;
+
+}
+
+U_BOOT_CMD(mcp, 4, 1, memcopy,
+	"memory copy",
+	"[dest addr] [source Addr] [size]"
+);
+U_BOOT_CMD(lnandcp, 4, 1, nandcp,
+	"copy nand to mem",
+	"[dest memaddr] [nand offset] [size]"
+);
+U_BOOT_CMD(lnander, 3, 1, nander,
+	"erase nand",
+	"[nand offset] [size]"
+);
+U_BOOT_CMD(lnandpp, 4, 1, nandpp,
+	"write mem to nand",
+	"[nand offset] [memaddr] [size]"
+);

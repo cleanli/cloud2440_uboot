@@ -462,7 +462,7 @@ int get_keypress()
 
 }
 /*****************************************************************************/
-#if 0
+#if 1
 #define __REGb(x)       (*(volatile unsigned char *)(x))
 #define __REGi(x)       (*(volatile unsigned int *)(x))
 #define NF_BASE         0x4e000000
@@ -485,6 +485,7 @@ int get_keypress()
 #define NAND_SECTOR_SIZE        512
 #define NAND_BLOCK_MASK         (NAND_SECTOR_SIZE - 1)
 
+/*
 void s3c2440_serial_send_byte(unsigned char c)
 {
         while(!(USCON0 & 0x2));
@@ -496,12 +497,33 @@ void ps(char*s)
 	while(*s)
 		s3c2440_serial_send_byte(*s++);
 }
-/* low level nand read function */
-int nand_read_ll(unsigned char *buf, unsigned long start_addr, int size)
-{
-        int i, j, k = 0;
+*/
 
-	ps("\r\n\r\nWelcome use U-boot, compiled by Clean Li.\r\n");
+void nand_reset()
+{
+	uint tmp = 10;
+	NFCONF = (7<<12)|(7<<8)|(7<<4)|(0<<0);
+	NFCONT = (1<<4)|(0<<1)|(1<<0);
+	NFSTAT = 0x4;
+	NFCMD = 0xff;
+	while(tmp--);
+        NAND_CHIP_DISABLE;
+}
+
+/* low level nand read function */
+int ll_nand_read(unsigned char *buf, unsigned long start_addr, int size)
+{
+        int i, j;
+	
+	printf("Copy Command:membuf=%x, nandaddr=%x, size=%x\r\n", buf, start_addr, size);
+        if ((start_addr & NAND_BLOCK_MASK) || (size & NAND_BLOCK_MASK)) {
+                return -1;      /* invalid alignment */
+        }
+	if(!(NFSTAT&0x1)){
+		printf("nand flash may have some problem, quit!\r\n");
+		return -1;
+	}
+
         NAND_CHIP_ENABLE;
 
         for(i=start_addr; i < (start_addr + size);) {
@@ -521,11 +543,99 @@ int nand_read_ll(unsigned char *buf, unsigned long start_addr, int size)
                         *buf = (NFDATA & 0xff);
                         buf++;
                 }
-		if((k++ & 0xf) == 0)
-                	s3c2440_serial_send_byte('>');
+		if(!((i>>9) & 0x3f))
+			printf(">");
         }
         NAND_CHIP_DISABLE;
-	ps("\r\nMove U-boot code from nand to Ram done.\r\n");
+        return 0;
+}
+
+#define ERASE_BLOCK_ADDR_MASK (512 * 32 -1)
+int ll_nand_erase(uint addr)
+{
+        printf("Erase Command:addr=%x\r\n", addr);
+	if(addr & ERASE_BLOCK_ADDR_MASK){
+		printf("erase addr not correct!\r\n");
+		return -1;
+	}	
+        if(!(NFSTAT&0x1)){
+                printf("nand flash may have some problem, quit!\r\n");
+                return -1;
+        }
+/*
+	if(is_marked_bad_block(addr)){
+                printf("block %x is bad block, quit!\r\n",addr);
+                return -1;
+	}
+*/
+        NAND_CHIP_ENABLE;
+        NAND_CLEAR_RB;
+	NFCMD = 0x60;
+        NFADDR = (addr >> 9) & 0xff;
+        NFADDR = (addr >> 17) & 0xff;
+        NFADDR = (addr >> 25) & 0xff;
+	NFCMD = 0xd0;
+	while(!(NFSTAT & 0x1)){
+#ifdef NAND_DEBUG
+		printf("%x\r\n", NFSTAT);
+#endif	
+	}
+	NFCMD = 0x70;
+	if(NFDATA & 0x1){
+		printf("erase failed! may get bad.\r\n");
+        	NAND_CHIP_DISABLE;
+		return -1;
+	}
+	printf("erase successfully! \r\n");
+        NAND_CHIP_DISABLE;
+	return 0;
+}
+
+int ll_nand_write(unsigned char *buf, unsigned long start_addr, int size)
+{
+        uint i, j;
+
+        printf("Write Command:membuf=%x, nandaddr=%x, size=%x\r\n", buf, start_addr, size);
+        if ((start_addr & NAND_BLOCK_MASK) || (size & NAND_BLOCK_MASK)) {
+                return -1;      /* invalid alignment */
+        }
+        if(!(NFSTAT&0x1)){
+                printf("nand flash may have some problem, quit!\r\n");
+                return -1;
+        }
+
+        NAND_CHIP_ENABLE;
+
+        for(i=start_addr; i < (start_addr + size);) {
+                /* READ0 */
+                NAND_CLEAR_RB;
+                NFCMD = 0x80;
+
+                /* Write Address */
+                NFADDR = i & 0xff;
+                NFADDR = (i >> 9) & 0xff;
+                NFADDR = (i >> 17) & 0xff;
+                NFADDR = (i >> 25) & 0xff;
+
+
+                for(j=0; j < NAND_SECTOR_SIZE; j++, i++) {
+                        NFDATA = *buf++;
+                }
+		NFCMD = 0x10;
+        	NAND_DETECT_RB;
+		
+		while(!NFSTAT&0x1);
+		NFCMD = 0x70;
+		if(NFDATA & 0x1){
+			printf("current block(%x)program failed! may get bad.\r\n", (i-512)&~ERASE_BLOCK_ADDR_MASK);
+        		NAND_CHIP_DISABLE;
+			return -1;
+		}	
+		
+                if(!((i>>9) & 0x3f))
+                        printf("<");
+        }
+        NAND_CHIP_DISABLE;
         return 0;
 }
 #endif

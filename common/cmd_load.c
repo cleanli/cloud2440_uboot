@@ -1126,7 +1126,7 @@ int mem_sha256sum (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 }
 
 U_BOOT_CMD(
-	sha256sum, 3, 0,	mem_sha256sum,
+	sha256su, 3, 0,	mem_sha256sum,
 	"compute sha256 of memory",
 	"[ addr ] [ size ]\n"
 	"    compute sha256 of memory"
