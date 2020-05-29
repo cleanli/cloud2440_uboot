@@ -1,0 +1,58 @@
+make cloud2440_config
+make
+
+Or:
+make cloud2440
+
+compile tool:
+arm/4.3.2
+
+$ ls /home/clean/tool/arm/4.3.2/bin -l
+total 14208
+lrwxrwxrwx 1 clean clean      32 10月 25  2009 arm-linux-addr2line -> arm-none-linux-gnueabi-addr2line
+lrwxrwxrwx 1 clean clean      25 10月 25  2009 arm-linux-ar -> arm-none-linux-gnueabi-ar
+lrwxrwxrwx 1 clean clean      25 10月 25  2009 arm-linux-as -> arm-none-linux-gnueabi-as
+lrwxrwxrwx 1 clean clean      26 10月 25  2009 arm-linux-c++ -> arm-none-linux-gnueabi-c++
+lrwxrwxrwx 1 clean clean      30 10月 25  2009 arm-linux-c++filt -> arm-none-linux-gnueabi-c++filt
+lrwxrwxrwx 1 clean clean      26 10月 25  2009 arm-linux-cpp -> arm-none-linux-gnueabi-cpp
+-rwxr-xr-x 1 clean clean      62 3月  25  2009 arm-linux-g++
+-rwxr-xr-x 1 clean clean      62 3月  25  2009 arm-linux-gcc
+lrwxrwxrwx 1 clean clean      32 10月 25  2009 arm-linux-gcc-4.3.2 -> arm-none-linux-gnueabi-gcc-4.3.2
+lrwxrwxrwx 1 clean clean      27 10月 25  2009 arm-linux-gcov -> arm-none-linux-gnueabi-gcov
+lrwxrwxrwx 1 clean clean      26 10月 25  2009 arm-linux-gdb -> arm-none-linux-gnueabi-gdb
+lrwxrwxrwx 1 clean clean      29 10月 25  2009 arm-linux-gdbtui -> arm-none-linux-gnueabi-gdbtui
+lrwxrwxrwx 1 clean clean      28 10月 25  2009 arm-linux-gprof -> arm-none-linux-gnueabi-gprof
+lrwxrwxrwx 1 clean clean      25 10月 25  2009 arm-linux-ld -> arm-none-linux-gnueabi-ld
+lrwxrwxrwx 1 clean clean      25 10月 25  2009 arm-linux-nm -> arm-none-linux-gnueabi-nm
+lrwxrwxrwx 1 clean clean      30 10月 25  2009 arm-linux-objcopy -> arm-none-linux-gnueabi-objcopy
+lrwxrwxrwx 1 clean clean      30 10月 25  2009 arm-linux-objdump -> arm-none-linux-gnueabi-objdump
+lrwxrwxrwx 1 clean clean      29 10月 25  2009 arm-linux-ranlib -> arm-none-linux-gnueabi-ranlib
+lrwxrwxrwx 1 clean clean      30 10月 25  2009 arm-linux-readelf -> arm-none-linux-gnueabi-readelf
+lrwxrwxrwx 1 clean clean      27 10月 25  2009 arm-linux-size -> arm-none-linux-gnueabi-size
+lrwxrwxrwx 1 clean clean      29 10月 25  2009 arm-linux-sprite -> arm-none-linux-gnueabi-sprite
+lrwxrwxrwx 1 clean clean      30 10月 25  2009 arm-linux-strings -> arm-none-linux-gnueabi-strings
+lrwxrwxrwx 1 clean clean      28 10月 25  2009 arm-linux-strip -> arm-none-linux-gnueabi-strip
+-rwxr-xr-x 1 clean clean  480776 11月 18  2008 arm-none-linux-gnueabi-addr2line
+-rwxr-xr-x 2 clean clean  502800 11月 18  2008 arm-none-linux-gnueabi-ar
+-rwxr-xr-x 2 clean clean  862456 11月 18  2008 arm-none-linux-gnueabi-as
+-rwxr-xr-x 2 clean clean  194440 11月 18  2008 arm-none-linux-gnueabi-c++
+-rwxr-xr-x 1 clean clean  479768 11月 18  2008 arm-none-linux-gnueabi-c++filt
+-rwxr-xr-x 1 clean clean  193224 11月 18  2008 arm-none-linux-gnueabi-cpp
+-rwxr-xr-x 2 clean clean  194440 11月 18  2008 arm-none-linux-gnueabi-g++
+-rwxr-xr-x 2 clean clean  192168 11月 18  2008 arm-none-linux-gnueabi-gcc
+-rwxr-xr-x 2 clean clean  192168 11月 18  2008 arm-none-linux-gnueabi-gcc-4.3.2
+-rwxr-xr-x 1 clean clean   23132 11月 18  2008 arm-none-linux-gnueabi-gcov
+-rwxr-xr-x 1 clean clean 2623096 11月 18  2008 arm-none-linux-gnueabi-gdb
+-rwxr-xr-x 1 clean clean 2623096 11月 18  2008 arm-none-linux-gnueabi-gdbtui
+-rwxr-xr-x 1 clean clean  540828 11月 18  2008 arm-none-linux-gnueabi-gprof
+-rwxr-xr-x 2 clean clean  875776 11月 18  2008 arm-none-linux-gnueabi-ld
+-rwxr-xr-x 2 clean clean  490760 11月 18  2008 arm-none-linux-gnueabi-nm
+-rwxr-xr-x 2 clean clean  628000 11月 18  2008 arm-none-linux-gnueabi-objcopy
+-rwxr-xr-x 2 clean clean  753176 11月 18  2008 arm-none-linux-gnueabi-objdump
+-rwxr-xr-x 2 clean clean  502800 11月 18  2008 arm-none-linux-gnueabi-ranlib
+-rwxr-xr-x 1 clean clean  250408 11月 18  2008 arm-none-linux-gnueabi-readelf
+-rwxr-xr-x 1 clean clean  482556 11月 18  2008 arm-none-linux-gnueabi-size
+-rwxr-xr-x 1 clean clean  302584 11月 18  2008 arm-none-linux-gnueabi-sprite
+-rwxr-xr-x 1 clean clean  482056 11月 18  2008 arm-none-linux-gnueabi-strings
+-rwxr-xr-x 2 clean clean  628000 11月 18  2008 arm-none-linux-gnueabi-strip
+
