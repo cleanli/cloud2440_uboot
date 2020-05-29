@@ -730,74 +730,67 @@ int nandcp(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 int nander(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
-#if 0
-    uint addr, tmp, size, n;
+    long addr, size, n;
+    if (argc == 3) {
+        addr = simple_strtol(argv[1], NULL, 16);
+        size = simple_strtol(argv[2], NULL, 16);
 
-    tmp = get_howmany_para(p);
-    if(tmp != 2)
-        goto error;
-    p = str_to_hex(p, &addr);
-    p = str_to_hex(p, &size);
-    if(addr%0x4000 != 0){
-        printf("addr must be 0x4000 x n\r\n");
-        goto error;
-    }
-    if(size%0x4000 != 0){
-        printf("size must be 0x4000 x n\r\n");
-        goto error;
-    }
-    n = size/0x4000;
-cp:
-    nand_reset();
-    while(n--){
-        if(nand_erase_ll(addr)){
-            printf("erase error\r\n");
+        if(addr%0x4000 != 0){
+            printf("addr must be 0x4000 x n\r\n");
+            goto error;
         }
-        else{
-            printf("erase nand block 0x%x done!\r\n",addr);
+        if(size%0x4000 != 0){
+            printf("size must be 0x4000 x n\r\n");
+            goto error;
         }
-        addr+=0x4000;
-    }
-    return;
+        n = size/0x4000;
 
+        nand_reset();
+        while(n--){
+            if(ll_nand_erase(addr)){
+                printf("erase error\r\n");
+            }
+            else{
+                printf("erase nand block 0x%lx done!\r\n",addr);
+            }
+            addr+=0x4000;
+        }
+        return 0;
+    }
 error:
-    printf("Error para!\r\nnander (hex block addr) (hex size)\r\n");
-#endif
-    return 0;
-
+    printf("Para error! Should followed with nand addr 'addr' and size 'size'\r\n");
+    return 1;
 }
 
 int nandpp(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
-#if 0
-    uint addr, pages, tmp, size;
+    long addrsrc, addrnand, size, pages;
+    if (argc == 4) {
+        addrnand = simple_strtol(argv[1], NULL, 16);
+        addrsrc = simple_strtol(argv[2], NULL, 16);
+        size = simple_strtol(argv[3], NULL, 16);
+        pages = size/512;
 
-    tmp = get_howmany_para(p);
-    if(tmp != 2)
-        goto error;
-    p = str_to_hex(p, &addr);
-    str_to_hex(p, &size);
-    if(size%512 != 0){
-        printff("size should be 512*n\r\n");
-        goto error;
+        if(size%512 != 0){
+            printf("size should be 512*n\r\n");
+            goto error;
+        }
+        pages = size/512;
+        addrnand = addrnand & 0xfffffe00;
+
+        nand_reset();
+        if(ll_nand_write((unsigned char*)addrsrc, addrnand, 512 * pages)){
+            printf("low level nand write failed\r\n");
+            goto error;
+        }
+        printf("program 0x%lx pages:size %lx from memory 0x%lx to nand addr %lx done!\r\n",
+                pages,size,addrsrc,addrnand);
+        return 0;
     }
-    pages = size/512;
-    addr = addr & 0xfffffe00;
-
-    nand_reset();
-    if(nand_write_ll((unsigned char*)mrw_addr, addr, 512 * pages)){
-	printf("failed\r\n");
-	return;
-    }
-    printf("program 0x%x pages:size %x from memory 0x%x to nand addr %x done!\r\n",
-            pages,size,mrw_addr,addr);
-    return;
-
 error:
-    printf("Error para!\r\nnandcp (hex addr) (hex size)\r\n");
-#endif
-    return 0;
-
+    printf("Para error! Should followed with dest nand addr 'addr'"
+            " and mem source addr, and data size\r\n");
+    return 1;
 }
 
 U_BOOT_CMD(mcp, 4, 1, memcopy,
