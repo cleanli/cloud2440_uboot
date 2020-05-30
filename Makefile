@@ -301,6 +301,7 @@ $(obj)u-boot.srec:	$(obj)u-boot
 
 $(obj)u-boot.bin:	$(obj)u-boot
 		$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
+		sha256sum u-boot.bin
 		cp u-boot.bin /tmp
 
 $(obj)u-boot.ldr:	$(obj)u-boot

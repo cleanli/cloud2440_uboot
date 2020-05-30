@@ -46,7 +46,7 @@
 #define CONFIG_SETUP_MEMORY_TAGS 1
 
 #define USE_920T_MMU		0
-#undef CONFIG_USE_IRQ			/* we don't need IRQ/FIQ stuff */
+#define CONFIG_USE_IRQ	1		/* we don't need IRQ/FIQ stuff */
 #define CONFIG_SKIP_RELOCATE_UBOOT
 
 /*

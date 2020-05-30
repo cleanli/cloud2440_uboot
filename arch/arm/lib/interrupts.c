@@ -49,7 +49,8 @@ int interrupt_init (void)
 	IRQ_STACK_START = _armboot_start - CONFIG_SYS_MALLOC_LEN - CONFIG_SYS_GBL_DATA_SIZE - 4;
 	FIQ_STACK_START = IRQ_STACK_START - CONFIG_STACKSIZE_IRQ;
 
-	return arch_interrupt_init();
+	//return arch_interrupt_init();
+	return 0;
 }
 
 /* enable IRQ interrupts */
