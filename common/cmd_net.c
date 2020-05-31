@@ -164,6 +164,10 @@ netboot_common (proto_t proto, cmd_tbl_t *cmdtp, int argc, char *argv[])
 		load_addr = simple_strtoul(s, NULL, 16);
 	}
 
+	if ((s = getenv("filename")) != NULL) {
+        copy_filename(BootFile, s, sizeof(BootFile));
+	}
+
 	switch (argc) {
 	case 1:
 		break;
@@ -209,6 +213,7 @@ netboot_common (proto_t proto, cmd_tbl_t *cmdtp, int argc, char *argv[])
 
 	/* flush cache */
 	flush_cache(load_addr, size);
+	show_sha256sum(load_addr, size);
 
 	/* Loading ok, check if we should attempt an auto-start */
 	if (((s = getenv("autostart")) != NULL) && (strcmp(s,"yes") == 0)) {
