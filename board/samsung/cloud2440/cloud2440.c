@@ -60,7 +60,7 @@ static void video_drawchars (int xx, int yy, char *s, int count);
 void video_drawstring (int xx, int yy, char *s);
 static int video_init (void);
 
-inline void delay (unsigned long loops)
+static inline void delay (unsigned long loops)
 {
 	__asm__ volatile ("1:\n"
 	  "subs %0, %1, #1\n"

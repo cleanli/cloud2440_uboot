@@ -21,7 +21,12 @@
 # MA 02111-1307 USA
 #
 
+use_2019_gcc = true
+ifeq ($(use_2019_gcc),true)
+CROSS_COMPILE ?= arm-none-eabi-
+else
 CROSS_COMPILE ?= arm-linux-
+endif
 
 ifeq ($(BOARD),omap2420h4)
 STANDALONE_LOAD_ADDR = 0x80300000

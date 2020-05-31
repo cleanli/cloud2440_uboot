@@ -116,6 +116,13 @@ static int s3c2410_nand_correct_data(struct mtd_info *mtd, u_char *dat,
 }
 #endif
 
+static inline void delay (unsigned long loops)
+{
+	__asm__ volatile ("1:\n"
+	  "subs %0, %1, #1\n"
+	  "bne 1b":"=r" (loops):"0" (loops));
+}
+
 int board_nand_init(struct nand_chip *nand)
 {
 	u_int32_t cfg;

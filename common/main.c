@@ -49,7 +49,8 @@ DECLARE_GLOBAL_DATA_PTR;
  * Board-specific Platform code can reimplement show_boot_progress () if needed
  */
 void inline __show_boot_progress (int val) {}
-void show_boot_progress (int val) __attribute__((weak, alias("__show_boot_progress")));
+void show_boot_progress (int val) __attribute__((weak));
+void show_boot_progress (int val) {}
 
 #if defined(CONFIG_BOOT_RETRY_TIME) && defined(CONFIG_RESET_TO_RETRY)
 extern int do_reset (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);		/* for do_reset() prototype */
