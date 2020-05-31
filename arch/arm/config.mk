@@ -21,7 +21,7 @@
 # MA 02111-1307 USA
 #
 
-use_2019_gcc = true
+#use_2019_gcc = true
 ifeq ($(use_2019_gcc),true)
 CROSS_COMPILE ?= arm-none-eabi-
 else
