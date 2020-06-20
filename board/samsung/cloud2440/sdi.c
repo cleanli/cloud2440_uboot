@@ -313,11 +313,19 @@ int Chk_DATend(void)
 
 int Chk_BUSYend(void)
 {
-    int finish;
+    int finish, ct=5;
 
     finish=rSDIDSTA;
-    while( !( ((finish&0x08)==0x08) | ((finish&0x20)==0x20) ))
-	finish=rSDIDSTA;
+
+    while( !( ((finish&0x08)==0x08) || ((finish&0x20)==0x20) ))
+    {
+        if(ct-- == 0){
+            break;
+        }
+        finish=rSDIDSTA;
+        udelay(40000);
+        lprintf("rSDIDSTA %X\n", finish);
+    }
 
     if( (finish&0xfc) != 0x08 )
     {
@@ -781,6 +789,8 @@ REWTCMD:
         rSDIDSTA=0x10;  // Clear data Tx/Rx end   
         return 1;   
     }   
+
+    rSDIDSTA=0x10;   
 
     if(block>1)      
     {      
