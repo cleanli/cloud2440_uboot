@@ -222,7 +222,7 @@ RECMDS7:
 	rSDICSTA=0xa00;	// Clear cmd_end(with rsp)
 
 	//--State(transfer) check
-	if( (rSDIRSP0 & 0x1e00)!=0x800 )
+	if( rSDIRSP0 & 0x1e00!=0x800 )
 	    goto RECMDS7;
     }
     else
