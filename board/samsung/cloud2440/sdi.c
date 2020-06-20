@@ -49,7 +49,6 @@ volatile int RCA;
 void SD_Op(uint opflag, uint sdaddr, uint size, uint memaddr)
 {
 	U32 save_rGPEUP, save_rGPECON;
-	int k;
 	
     mmc_dev_if_type = IF_TYPE_UNKNOWN;
     spec_ver = 0;
@@ -70,12 +69,12 @@ void SD_Op(uint opflag, uint sdaddr, uint size, uint memaddr)
 	return;
  
     if(opflag == SD_READ){
-        ReadS(sdaddr,(int*)memaddr,size);
+        ReadS(sdaddr,(uint*)memaddr,size);
         printf("read %x from sd block %X to mem %X done\n",
                 size, sdaddr, memaddr);
     }
     else if(opflag == SD_WRITE){
-        WriteS(sdaddr,(int*)memaddr,size);
+        WriteS(sdaddr,(uint*)memaddr,size);
         printf("write %x to sd block %X from mem %X done\n",
                 size, sdaddr, memaddr);
     }
@@ -100,7 +99,6 @@ int SD_card_init(void)
 {
 //-- SD controller & card initialize 
     int i;
-    char key;
     uint cid[4];
 
 
@@ -178,7 +176,7 @@ RECMD3:
 
         rSDIPRE=(get_PCLK()/MMCCLK)-1;	// YH 0812, Normal clock=20MHz
 
-        Uart_Printf("MMC Frequency is %dHz\n",(get_PCLK()/(rSDIPRE+1)));
+        Uart_Printf("MMC Frequency is %luHz\n",(get_PCLK()/(rSDIPRE+1)));
     	}
     else 
     	{
@@ -186,10 +184,10 @@ RECMD3:
 		    Uart_Printf("RCA=0x%x\n",RCA);
 
 			rSDIPRE=get_PCLK()/(SDCLK)-1;	// Normal clock=25MHz
-			Uart_Printf("SD Frequency is %dHz\n",(get_PCLK()/(rSDIPRE+1)));
+			Uart_Printf("SD Frequency is %luHz\n",(get_PCLK()/(rSDIPRE+1)));
     	}	//YH 0716
     //--State(stand-by) check
-    if( rSDIRSP0 & 0x1e00!=0x600 )  // CURRENT_STATE check
+    if( (rSDIRSP0 & 0x1e00)!=0x600 )  // CURRENT_STATE check
 	goto RECMD3;
     
     //Uart_Printf("\nIn stand-by\n");
@@ -224,7 +222,7 @@ RECMDS7:
 	rSDICSTA=0xa00;	// Clear cmd_end(with rsp)
 
 	//--State(transfer) check
-	if( rSDIRSP0 & 0x1e00!=0x800 )
+	if( (rSDIRSP0 & 0x1e00)!=0x800 )
 	    goto RECMDS7;
     }
     else
@@ -324,7 +322,7 @@ int Chk_BUSYend(void)
         }
         finish=rSDIDSTA;
         udelay(40000);
-        lprintf("rSDIDSTA %X\n", finish);
+        printf("rSDIDSTA %X\n", finish);
     }
 
     if( (finish&0xfc) != 0x08 )
@@ -375,7 +373,7 @@ int Chk_MMC_OCR(void)
 
 int Chk_SD_OCR(void)
 {
-    int i,j=0;
+    int i=0;
 
     //-- Negotiate operating condition for SD, it makes card ready state
     for(i=0;i<50;i++)	//If this time is short, init. can be fail.
@@ -551,7 +549,7 @@ static void mmc_decode_cid(uint32_t * resp)
 		 * have to assume we can parse this.
 		 */
 		sprintf((char *)mmc_dev_vendor,
-			"Man %b OEM %c%c \"%c%c%c%c%c\" Date %u/%u",
+			"Man %02x OEM %c%c \"%c%c%c%c%c\" Date %u/%u",
 			UNSTUFF_BITS(resp, 120, 8), UNSTUFF_BITS(resp, 112, 8),
 			UNSTUFF_BITS(resp, 104, 8), UNSTUFF_BITS(resp, 96, 8),
 			UNSTUFF_BITS(resp, 88, 8), UNSTUFF_BITS(resp, 80, 8),
