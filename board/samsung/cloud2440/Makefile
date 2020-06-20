@@ -26,6 +26,7 @@ include $(TOPDIR)/config.mk
 LIB	= $(obj)lib$(BOARD).a
 
 COBJS	:= cloud2440.o
+COBJS	+= sdi.o
 #COBJS	:= cloud2440.o flash.o
 SOBJS	:= lowlevel_init.o
 

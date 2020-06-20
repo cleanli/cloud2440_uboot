@@ -16,6 +16,7 @@
 #include <asm/byteorder.h>
 #include <jffs2/jffs2.h>
 #include <nand.h>
+#include <sdi.h>
 
 #if defined(CONFIG_CMD_MTDPARTS)
 
@@ -682,7 +683,7 @@ U_BOOT_CMD(nboot, 4, 1, do_nandboot,
 	"[partition] | [[[loadAddr] dev] offset]"
 );
 
-void nand_reset();
+void nand_reset(void);
 int ll_nand_read(unsigned char *buf, unsigned long start_addr, int size);
 #define ERASE_BLOCK_ADDR_MASK (512 * 32 -1)
 int ll_nand_erase(uint addr);
@@ -793,6 +794,32 @@ error:
     return 1;
 }
 
+int mmc(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+    long sd_blkno=0, data_size=0, memaddr=0, opflag = SD_INFO;
+
+    if(argc < 4){
+        printf("Help:\r\nlmmc sd_block_no data_size memaddr [w]\r\n\r\n");
+    }
+    else{
+        sd_blkno = simple_strtol(argv[1], NULL, 16);
+        data_size = simple_strtol(argv[2], NULL, 16);
+        memaddr = simple_strtol(argv[3], NULL, 16);
+        if(argc == 4){
+            printf("SD Read:\n");
+            opflag = SD_READ;
+        }
+        else{
+            printf("SD Write:\n");
+            opflag = SD_WRITE;
+        }
+        printf("mem %08lx, sd block %lx, size %lx(%lu)\n",
+                memaddr, sd_blkno, data_size, data_size);
+    }
+    SD_Op(opflag, sd_blkno, data_size, memaddr);
+    return 1;
+}
+
 U_BOOT_CMD(mcp, 4, 1, memcopy,
 	"memory copy",
 	"[dest addr] [source Addr] [size]"
@@ -808,4 +835,8 @@ U_BOOT_CMD(lnander, 3, 1, nander,
 U_BOOT_CMD(lnandpp, 4, 1, nandpp,
 	"write mem to nand",
 	"[nand offset] [memaddr] [size]"
+);
+U_BOOT_CMD(lmmc, 5, 1, mmc,
+	"mmc command",
+	"[sd blockNo] [size] [memaddr] [w]"
 );
