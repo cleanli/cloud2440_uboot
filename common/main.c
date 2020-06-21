@@ -92,9 +92,15 @@ int do_mdm_init = 0;
 extern void mdm_init(void); /* defined in board.c */
 #endif
 
+u32 get_touch_xy();
+int last_ts_x = -1,last_ts_y=-1;
+#define MENU_START_Y 30
+#define MENU_INTERVAL_Y 20
 void screen_control()
 {
 	int i = 1, j, posy = 30, bootchoose, tmp_bootchoose, key;
+    int touch_choose;
+    u32 ts_xy, ts_x, ts_y;
 	char str_tmp[128], *s;
 
 	s = getenv ("bootchoose");
@@ -106,7 +112,7 @@ void screen_control()
 	lcd_printf(15,200,"o    o    o    o    o    o  ");
 	lcd_printf(15,185,"_____________________________ ");
 draw_menu:
-	posy = 30;
+	posy = MENU_START_Y;
 	i = 1;
 	while(1){
 		sprintf(str_tmp, "bootname%d", i);
@@ -119,12 +125,44 @@ draw_menu:
 			set_draw_color(0xa0, 0);
 		lcd_printf(30, posy, "%d %s", i, s);
 		i++;
-		posy += 20;
+		posy += MENU_INTERVAL_Y;
 	}
+    printf("current %d boot options\n", i-1);
 	set_draw_color(0xa0, 0);
 	udelay(300000);
-	while(!(key = get_keypress()));
-	printf("get key %d\n", key);
+    do{
+        key = get_keypress();
+        ts_xy = get_touch_xy();
+    } while(!key && ts_xy == 0xffffffff);
+    printf("get key %d, ts_xy %x\n", key, ts_xy);
+    if(ts_xy != 0xffffffff){
+        udelay(50*1000);
+        ts_xy = get_touch_xy();
+        if(ts_xy == 0xffffffff){
+            goto draw_menu;
+        }
+        if(last_ts_x > 0 && last_ts_y > 0){
+			set_draw_color(0, 0);
+            lcd_printf(last_ts_x, last_ts_y,"o");
+			set_draw_color(0xa0, 0);
+        }
+        ts_x = ts_xy & 0xffff;
+        ts_y = ts_xy>>16;
+        lcd_printf(ts_x, ts_y,"o");
+        touch_choose = (ts_y - MENU_START_Y)/20 + 1;
+        if(touch_choose == tmp_bootchoose){
+            //confirmed choose done
+            key = OK_KEY;
+        }
+        else{
+            if(touch_choose < i-1 && touch_choose > 0){
+                tmp_bootchoose = touch_choose;
+            }
+            last_ts_x = ts_x;
+            last_ts_y = ts_y;
+            goto draw_menu;
+        }
+    }
 	if(key == UP_KEY || key == LEFT_KEY){
 		tmp_bootchoose --;
 		if(!tmp_bootchoose)
