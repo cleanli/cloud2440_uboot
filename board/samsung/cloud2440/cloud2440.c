@@ -499,33 +499,39 @@ u32 transfer_to_xy_ord(u32 in, u32 max)
 u32 get_touch_xy()
 {
     u32 x, y, ret=0xffffffff;
+    static int touch_adc_trigged = 0;
 
     //enable adc clk
     //rADCCON=(1<<14)+(ADCPRS<<6);
-	if(!(rADCDAT0&0x8000)){
-        rADCTSC=(1<<3)|(1<<2);
-        rADCDLY=40000;
+    if(touch_adc_trigged != 0){
+        if(!(rADCCON & 0x1) && (rADCCON & 0x8000)){
+            //get data
+            x=(rADCDAT0&0x3ff);
+            y=(rADCDAT1&0x3ff);
+            //clear int flag
+            rSUBSRCPND|=BIT_SUB_TC;
+            rSRCPND = BIT_ADC;
+            rINTPND = BIT_ADC;
+            rADCTSC=0x1d3;//wait pen up
 
-        //start ADC
-        rADCCON|=0x1;
+            x = transfer_to_xy_ord(x, 320);
+            y = transfer_to_xy_ord(y, 240);
+            y = 240 - y;
+            printf("touch screen %d %d\n", x, y);
+            ret = y<<16 | x;
+            touch_adc_trigged = 0;
+        }
+    }
+    else{
+        if(!(rADCDAT0&0x8000)){
+            rADCTSC=(1<<3)|(1<<2);
+            rADCDLY=40000;
 
-        while(rADCCON & 0x1);
-        while(!(rADCCON & 0x8000));
+            //start ADC
+            rADCCON|=0x1;
 
-        //get data
-        x=(rADCDAT0&0x3ff);
-        y=(rADCDAT1&0x3ff);
-        //clear int flag
-        rSUBSRCPND|=BIT_SUB_TC;
-        rSRCPND = BIT_ADC;
-        rINTPND = BIT_ADC;
-        rADCTSC=0x1d3;//wait pen up
-
-        x = transfer_to_xy_ord(x, 320);
-        y = transfer_to_xy_ord(y, 240);
-        y = 240 - y;
-        printf("touch screen %d %d\n", x, y);
-        ret = y<<16 | x;
+            touch_adc_trigged = 1;
+        }
     }
     //rADCCON=(0<<14);
     rINTSUBMSK=~(BIT_SUB_TC);
