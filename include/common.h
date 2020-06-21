@@ -115,6 +115,15 @@ typedef volatile unsigned char	vu_char;
 #include <flash.h>
 #include <image.h>
 
+#define env_dbg_flg (*(unsigned long *)0x31fffffc)
+#define BOOTUP_DEBUG_MAGIC 0xBDDBDDBD
+#define ddebug(flag,fmt,args...) \
+    if(env_dbg_flg==BOOTUP_DEBUG_MAGIC)printf(fmt, ##args)
+#define bddg(fmt,args...) \
+    if(env_dbg_flg==BOOTUP_DEBUG_MAGIC)printf(fmt, ##args)
+#define BDDGL bddg("bud:%d-%s\n", __LINE__, __FILE__)
+#define BDDGX(X) bddg("bud:%x:%d-%s\n", X, __LINE__, __FILE__)
+
 #ifdef	DEBUG
 #define debug(fmt,args...)	printf (fmt ,##args)
 #define debugX(level,fmt,args...) if (DEBUG>=level) printf(fmt,##args);

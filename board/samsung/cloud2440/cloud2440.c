@@ -486,13 +486,12 @@ int get_keypress()
 
 }
 
-#define LESS 0x54
-#define MAX 0x3AA
+#define TSLESS 0x54
+#define TSMAX 0x3AA
 u32 transfer_to_xy_ord(u32 in, u32 max)
 {
     u32 ret;
-    ret = max * (in - LESS) /(u32) (MAX - LESS);
-    //ret = div_local(max * (in - LESS), (u32) (MAX - LESS));
+    ret = max * (in - TSLESS) /(u32) (TSMAX - TSLESS);
     return ret;
 }
 
@@ -501,9 +500,11 @@ u32 get_touch_xy()
     u32 x, y, ret=0xffffffff;
     static int touch_adc_trigged = 0;
 
+    BDDGX(rADCCON);
     //enable adc clk
     //rADCCON=(1<<14)+(ADCPRS<<6);
     if(touch_adc_trigged != 0){
+        BDDGL;
         if(!(rADCCON & 0x1) && (rADCCON & 0x8000)){
             //get data
             x=(rADCDAT0&0x3ff);
@@ -514,8 +515,10 @@ u32 get_touch_xy()
             rINTPND = BIT_ADC;
             rADCTSC=0x1d3;//wait pen up
 
+            BDDGL;
             x = transfer_to_xy_ord(x, 320);
             y = transfer_to_xy_ord(y, 240);
+            BDDGL;
             y = 240 - y;
             printf("touch screen %d %d\n", x, y);
             ret = y<<16 | x;
@@ -523,6 +526,7 @@ u32 get_touch_xy()
         }
     }
     else{
+        BDDGL;
         if(!(rADCDAT0&0x8000)){
             rADCTSC=(1<<3)|(1<<2);
             rADCDLY=40000;
@@ -533,9 +537,10 @@ u32 get_touch_xy()
             touch_adc_trigged = 1;
         }
     }
+    BDDGL;
     //rADCCON=(0<<14);
-    rINTSUBMSK=~(BIT_SUB_TC);
-    rINTMSK=~(BIT_ADC);
+    //rINTSUBMSK=~(BIT_SUB_TC);
+    //rINTMSK=~(BIT_ADC);
     return ret;
 }
 /*****************************************************************************/

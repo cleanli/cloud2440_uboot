@@ -373,7 +373,9 @@ restart_autoboot:
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT);
 #else
+    BDDGL;
 	printf("Hit any key to stop autoboot: %2d ", bootdelay);
+    BDDGL;
 	lcd_printf(15, 22, "Hit any key to stop autoboot: %2d ", bootdelay);
 #endif
 
@@ -397,6 +399,7 @@ restart_autoboot:
 		--bootdelay;
 		/* delay 100 * 10ms */
 		for (i=0; !abort && i<100; ++i) {
+            BDDGL;
 			if (tstc() || (ts_flag=screen_control())) {	/* we got a key press	*/
                 if(scr_ctl_type == 1 && ts_flag){
                     while(1){
@@ -533,6 +536,9 @@ void main_loop (void)
 #endif /* CONFIG_UPDATE_TFTP */
 
     //clean add
+	sct = getenv ("debugflag");
+	env_dbg_flg = sct ? simple_strtoul (sct, NULL, 16) : 0;
+    printf("env 'debugflag' is %d\n", env_dbg_flg);
 	sct = getenv ("scrctltp");
 	scr_ctl_type = sct ? simple_strtoul (sct, NULL, 10) : 0;
     printf("env 'scrctltp' is %d\n", scr_ctl_type);
