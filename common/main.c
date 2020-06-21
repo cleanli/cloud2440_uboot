@@ -108,6 +108,7 @@ int screen_control()
 	char str_tmp[128], *s;
 
     if(scr_ctl_type == 0){
+        BDDGL;
         return 0;
     }
     if(screen_control_need_init){
@@ -146,15 +147,19 @@ int screen_control()
     key = get_keypress();
     ts_xy = get_touch_xy();
     if(!key && ts_xy == 0xffffffff){
+        BDDGL;
         return 0;
     }
     printf("get key %d, ts_xy %x\n", key, ts_xy);
     if(ts_xy != 0xffffffff){
+        /*
         udelay(50*1000);
         ts_xy = get_touch_xy();
         if(ts_xy == 0xffffffff){
-            screen_menu_need_update = 1;
+            BDDGL;
+            return 0;
         }
+        */
         if(last_ts_x > 0 && last_ts_y > 0){
 			set_draw_color(0, 0);
             lcd_printf(last_ts_x, last_ts_y,"o");
@@ -240,6 +245,7 @@ int screen_control()
 		run_command (s, 0);
 	}
 end:
+    BDDGL;
 	return 1;
 }
 /***************************************************************************
@@ -402,6 +408,7 @@ restart_autoboot:
             BDDGL;
 			if (tstc() || (ts_flag=screen_control())) {	/* we got a key press	*/
                 if(scr_ctl_type == 1 && ts_flag){
+                    BDDGL;
                     while(1){
                         screen_control();
                     }
@@ -536,9 +543,11 @@ void main_loop (void)
 #endif /* CONFIG_UPDATE_TFTP */
 
     //clean add
+    /*
 	sct = getenv ("debugflag");
 	env_dbg_flg = sct ? simple_strtoul (sct, NULL, 16) : 0;
-    printf("env 'debugflag' is %d\n", env_dbg_flg);
+    */
+    printf("memflag 'debugflag' is %d\n", env_dbg_flg);
 	sct = getenv ("scrctltp");
 	scr_ctl_type = sct ? simple_strtoul (sct, NULL, 10) : 0;
     printf("env 'scrctltp' is %d\n", scr_ctl_type);
