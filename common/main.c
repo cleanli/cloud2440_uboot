@@ -547,7 +547,7 @@ void main_loop (void)
 	sct = getenv ("debugflag");
 	env_dbg_flg = sct ? simple_strtoul (sct, NULL, 16) : 0;
     */
-    printf("memflag 'debugflag' is %d\n", env_dbg_flg);
+    printf("memflag 31fffffc 'debugflag' is %x, magic is BDDBDDBD\n", env_dbg_flg);
 	sct = getenv ("scrctltp");
 	scr_ctl_type = sct ? simple_strtoul (sct, NULL, 10) : 0;
     printf("env 'scrctltp' is %d\n", scr_ctl_type);
