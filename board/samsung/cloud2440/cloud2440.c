@@ -56,6 +56,26 @@ DECLARE_GLOBAL_DATA_PTR;
 #define U_M_SDIV	0x2
 #endif
 
+// ADC
+#define rADCCON    (*(volatile unsigned *)0x58000000) //ADC control
+#define rADCTSC    (*(volatile unsigned *)0x58000004) //ADC touch screen control
+#define rADCDLY    (*(volatile unsigned *)0x58000008) //ADC start or Interval Delay
+#define rADCDAT0   (*(volatile unsigned *)0x5800000c) //ADC conversion data 0
+#define rADCDAT1   (*(volatile unsigned *)0x58000010) //ADC conversion data 1
+
+#define BIT_ADC        (0x1<<31)
+#define BIT_SUB_TC     (0x1<<9)
+
+// INTERRUPT
+#define rSRCPND     (*(volatile unsigned *)0x4a000000) //Interrupt request status
+#define rINTMOD     (*(volatile unsigned *)0x4a000004) //Interrupt mode control
+#define rINTMSK     (*(volatile unsigned *)0x4a000008) //Interrupt mask control
+#define rPRIORITY   (*(volatile unsigned *)0x4a00000a) //IRQ priority control
+#define rINTPND     (*(volatile unsigned *)0x4a000010) //Interrupt request status
+#define rINTOFFSET  (*(volatile unsigned *)0x4a000014) //Interruot request source offset
+#define rSUBSRCPND  (*(volatile unsigned *)0x4a000018) //Sub source pending
+#define rINTSUBMSK  (*(volatile unsigned *)0x4a00001c) //Interrupt sub mask
+
 static void video_drawchars (int xx, int yy, char *s, int count);
 void video_drawstring (int xx, int yy, char *s);
 static int video_init (void);
@@ -113,6 +133,10 @@ int board_init (void)
 
 	video_init();
 	video_drawstring(15,5,"Welcome to use cloud2440 U-boot!"); 
+
+    //Touch screen init
+    rADCCON=(1<<14)+(49<<6);
+    rADCTSC=0xd3;//wait pen down
 
 	/* arch number of CLOUD2440-Board */
 	gd->bd->bi_arch_number = MACH_TYPE_CLOUD2440;
@@ -460,6 +484,53 @@ int get_keypress()
 	}
 	return key;
 
+}
+
+#define LESS 0x54
+#define MAX 0x3AA
+u32 transfer_to_xy_ord(u32 in, u32 max)
+{
+    u32 ret;
+    ret = max * (in - LESS) /(u32) (MAX - LESS);
+    //ret = div_local(max * (in - LESS), (u32) (MAX - LESS));
+    return ret;
+}
+
+u32 get_touch_xy()
+{
+    u32 x, y, ret=0xffffffff;
+
+    //enable adc clk
+    //rADCCON=(1<<14)+(ADCPRS<<6);
+	if(!(rADCDAT0&0x8000)){
+        rADCTSC=(1<<3)|(1<<2);
+        rADCDLY=40000;
+
+        //start ADC
+        rADCCON|=0x1;
+
+        while(rADCCON & 0x1);
+        while(!(rADCCON & 0x8000));
+
+        //get data
+        x=(rADCDAT0&0x3ff);
+        y=(rADCDAT1&0x3ff);
+        //clear int flag
+        rSUBSRCPND|=BIT_SUB_TC;
+        rSRCPND = BIT_ADC;
+        rINTPND = BIT_ADC;
+        rADCTSC=0x1d3;//wait pen up
+
+        x = transfer_to_xy_ord(x, 320);
+        y = transfer_to_xy_ord(y, 240);
+        y = 240 - y;
+        printf("touch screen %d %d\n", x, y);
+        ret = y<<16 | x;
+    }
+    //rADCCON=(0<<14);
+    rINTSUBMSK=~(BIT_SUB_TC);
+    rINTMSK=~(BIT_ADC);
+    return ret;
 }
 /*****************************************************************************/
 #if 1

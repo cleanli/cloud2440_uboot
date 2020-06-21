@@ -318,6 +318,7 @@ static __inline__ int abortboot(int bootdelay)
 {
 	int abort = 0, bootdelay_bak=bootdelay;
 	char key;
+    u32 ts_xy;
 
 restart_autoboot:
 #ifdef CONFIG_MENUPROMPT
@@ -357,8 +358,9 @@ restart_autoboot:
 # endif
 				break;
 			}
-			if (key = get_keypress()){
-				printf("get key %d\n", key);
+			if ((key = get_keypress()) ||
+                    ((ts_xy = get_touch_xy()) != 0xffffffff)){
+				printf("get key %d, ts_xy %x\n", key, ts_xy);
 				if(key == OK_KEY){
 					puts("The screen and key set to autoboot at once! Let's go!\n");
 					abort = 0;
