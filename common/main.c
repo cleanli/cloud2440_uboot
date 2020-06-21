@@ -98,6 +98,7 @@ int touch_choose;
 int boot_choose_num, tmp_bootchoose;
 int screen_control_need_init = 1;
 int screen_menu_need_update = 1;
+int scr_ctl_type = 0;
 #define MENU_START_Y 40
 #define MENU_INTERVAL_Y 20
 int screen_control()
@@ -106,6 +107,9 @@ int screen_control()
     u32 ts_xy, ts_x, ts_y;
 	char str_tmp[128], *s;
 
+    if(scr_ctl_type == 0){
+        return 0;
+    }
     if(screen_control_need_init){
         s = getenv ("bootchoose");
         bootchoose = s ? (int)simple_strtol(s, NULL, 10) : 1;
@@ -363,7 +367,7 @@ static __inline__ int abortboot(int bootdelay)
 {
 	int abort = 0, bootdelay_bak=bootdelay;
 	char key;
-    u32 ts_xy;
+    u32 ts_flag;
 
 restart_autoboot:
 #ifdef CONFIG_MENUPROMPT
@@ -393,7 +397,12 @@ restart_autoboot:
 		--bootdelay;
 		/* delay 100 * 10ms */
 		for (i=0; !abort && i<100; ++i) {
-			if (tstc() || screen_control()) {	/* we got a key press	*/
+			if (tstc() || (ts_flag=screen_control())) {	/* we got a key press	*/
+                if(scr_ctl_type == 1 && ts_flag){
+                    while(1){
+                        screen_control();
+                    }
+                }
 				abort  = 1;	/* don't auto boot	*/
 				bootdelay = 0;	/* no more delay	*/
 # ifdef CONFIG_MENUKEY
@@ -426,6 +435,7 @@ restart_autoboot:
 
 void main_loop (void)
 {
+    char*sct;
 #ifndef CONFIG_SYS_HUSH_PARSER
 	static char lastcommand[CONFIG_SYS_CBSIZE] = { 0, };
 	int len;
@@ -521,6 +531,12 @@ void main_loop (void)
 #if defined(CONFIG_UPDATE_TFTP)
 	update_tftp ();
 #endif /* CONFIG_UPDATE_TFTP */
+
+    //clean add
+	sct = getenv ("scrctltp");
+	scr_ctl_type = sct ? simple_strtoul (sct, NULL, 10) : 0;
+    printf("env 'scrctltp' is %d\n", scr_ctl_type);
+    //clean add end
 
 #if defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY >= 0)
 	s = getenv ("bootdelay");

@@ -173,12 +173,15 @@ int serial_init(void)
  * written into its argument c.
  */
 int screen_control();
+extern int scr_ctl_type;
 int _serial_getc(const int dev_index)
 {
 	struct s3c24x0_uart *uart = s3c24x0_get_base_uart(dev_index);
 
 	while (!(readl(&uart->UTRSTAT) & 0x1)){
-        screen_control();
+        if(scr_ctl_type == 2){
+            screen_control();
+        }
     }
 		/* wait for character to arrive */ ;
 
