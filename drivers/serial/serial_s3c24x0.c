@@ -172,11 +172,14 @@ int serial_init(void)
  * otherwise. When the function is succesfull, the character read is
  * written into its argument c.
  */
+int screen_control();
 int _serial_getc(const int dev_index)
 {
 	struct s3c24x0_uart *uart = s3c24x0_get_base_uart(dev_index);
 
-	while (!(readl(&uart->UTRSTAT) & 0x1))
+	while (!(readl(&uart->UTRSTAT) & 0x1)){
+        screen_control();
+    }
 		/* wait for character to arrive */ ;
 
 	return readb(&uart->URXH) & 0xff;

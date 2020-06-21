@@ -94,52 +94,62 @@ extern void mdm_init(void); /* defined in board.c */
 
 u32 get_touch_xy();
 int last_ts_x = -1,last_ts_y=-1;
-#define MENU_START_Y 30
+int touch_choose;
+int boot_choose_num, tmp_bootchoose;
+int screen_control_need_init = 1;
+int screen_menu_need_update = 1;
+#define MENU_START_Y 40
 #define MENU_INTERVAL_Y 20
-void screen_control()
+int screen_control()
 {
-	int i = 1, j, posy = 30, bootchoose, tmp_bootchoose, key;
-    int touch_choose;
+	int i = 1, j, posy = 30, bootchoose, key;
     u32 ts_xy, ts_x, ts_y;
 	char str_tmp[128], *s;
 
-	s = getenv ("bootchoose");
-	bootchoose = s ? (int)simple_strtol(s, NULL, 10) : 1;
-	tmp_bootchoose = bootchoose;
-	clear_screen();
-	lcd_printf(15,5,"Please choose one to boot:");
-	lcd_printf(15,220,"Up  Down Left Right Ok Cancel");
-	lcd_printf(15,200,"o    o    o    o    o    o  ");
-	lcd_printf(15,185,"_____________________________ ");
-draw_menu:
-	posy = MENU_START_Y;
-	i = 1;
-	while(1){
-		sprintf(str_tmp, "bootname%d", i);
-		s = getenv(str_tmp);
-		if(!s)
-			break;
-		if(i == tmp_bootchoose)
-			set_draw_color(0xa0, 0x50);
-		else
-			set_draw_color(0xa0, 0);
-		lcd_printf(30, posy, "%d %s", i, s);
-		i++;
-		posy += MENU_INTERVAL_Y;
-	}
-    printf("current %d boot options\n", i-1);
-	set_draw_color(0xa0, 0);
-	udelay(300000);
-    do{
-        key = get_keypress();
-        ts_xy = get_touch_xy();
-    } while(!key && ts_xy == 0xffffffff);
+    if(screen_control_need_init){
+        s = getenv ("bootchoose");
+        bootchoose = s ? (int)simple_strtol(s, NULL, 10) : 1;
+        tmp_bootchoose = bootchoose;
+        clear_screen();
+        lcd_printf(15,5,"Please choose one to boot:");
+        lcd_printf(15,220,"Up  Down Left Right Ok Cancel");
+        lcd_printf(15,200,"o    o    o    o    o    o  ");
+        lcd_printf(15,185,"_____________________________ ");
+        screen_control_need_init = 0;
+    }
+    if(screen_menu_need_update){
+        posy = MENU_START_Y;
+        i = 1;
+        while(1){
+            sprintf(str_tmp, "bootname%d", i);
+            s = getenv(str_tmp);
+            if(!s)
+                break;
+            if(i == tmp_bootchoose)
+                set_draw_color(0xa0, 0x50);
+            else
+                set_draw_color(0xa0, 0);
+            lcd_printf(30, posy, "%d %s", i, s);
+            i++;
+            posy += MENU_INTERVAL_Y;
+        }
+        boot_choose_num = i-1;
+        //printf("current %d boot options\n", boot_choose_num);
+        screen_menu_need_update = 0;
+        set_draw_color(0xa0, 0);
+        udelay(300000);
+    }
+    key = get_keypress();
+    ts_xy = get_touch_xy();
+    if(!key && ts_xy == 0xffffffff){
+        return 0;
+    }
     printf("get key %d, ts_xy %x\n", key, ts_xy);
     if(ts_xy != 0xffffffff){
         udelay(50*1000);
         ts_xy = get_touch_xy();
         if(ts_xy == 0xffffffff){
-            goto draw_menu;
+            screen_menu_need_update = 1;
         }
         if(last_ts_x > 0 && last_ts_y > 0){
 			set_draw_color(0, 0);
@@ -155,25 +165,25 @@ draw_menu:
             key = OK_KEY;
         }
         else{
-            if(touch_choose < i-1 && touch_choose > 0){
+            if(touch_choose <= boot_choose_num && touch_choose > 0){
                 tmp_bootchoose = touch_choose;
             }
             last_ts_x = ts_x;
             last_ts_y = ts_y;
-            goto draw_menu;
+            screen_menu_need_update = 1;
         }
     }
 	if(key == UP_KEY || key == LEFT_KEY){
 		tmp_bootchoose --;
 		if(!tmp_bootchoose)
-		       tmp_bootchoose = i-1;	
-		goto draw_menu;
+		       tmp_bootchoose = boot_choose_num;	
+        screen_menu_need_update = 1;
 	}
 	if(key == DOWN_KEY || key == RIGHT_KEY){
 		tmp_bootchoose ++;
-		if(tmp_bootchoose == i)
+		if(tmp_bootchoose == (boot_choose_num-1))
 		       tmp_bootchoose = 1;	
-		goto draw_menu;
+        screen_menu_need_update = 1;
 	}
 	if(key == CANCEL_KEY){
 		lcd_printf(15,170,"Back to Uboot auto-boot...");
@@ -188,27 +198,27 @@ draw_menu:
 		if(tmp_bootchoose != bootchoose){
 			s = getenv ("bootsavedelay");
 			i = s ? (int)simple_strtol(s, NULL, 10) : 9;
-			lcd_printf(15,130,"Save boot choose %d to env?", tmp_bootchoose);
+			lcd_printf(15,160,"Save boot choose %d to env?", tmp_bootchoose);
 			key = 0;
 			while(i--){
-				lcd_printf(15,150,"%d seconds left", i);
+				lcd_printf(15,180,"%d seconds left", i);
 				j = 100;
 				while(j--){
 					udelay(10000);
 					if(key = get_keypress()){
 						if(key == OK_KEY){
-							lcd_printf(15,130,"boot choose %d saved         ", tmp_bootchoose);
+							lcd_printf(15,160,"boot choose %d saved         ", tmp_bootchoose);
 							saveenv();
 						}
 						else
-							lcd_printf(15,130,"boot choose %d no need save", tmp_bootchoose);
+							lcd_printf(15,160,"boot choose %d no need save", tmp_bootchoose);
 						i=0;
 						j=0;
 					}
 				}	
 			}
 			if(key != OK_KEY){
-				lcd_printf(15,130,"boot choose %d no need save", tmp_bootchoose);
+				lcd_printf(15,160,"boot choose %d no need save", tmp_bootchoose);
 			}
 		}
 
@@ -216,20 +226,17 @@ draw_menu:
 		s = getenv(str_tmp);
 		if(!s){
 			printf("boot setting error! The bootcmd of index %d not set\n", tmp_bootchoose);
-			lcd_printf(15,170,"boot setting error");
+			lcd_printf(15,200,"boot setting error");
 			udelay(1000000);
 			goto end;
 		}
-		lcd_printf(15,150,"booting option %d       ", tmp_bootchoose);
+		lcd_printf(15,180,"booting option %d       ", tmp_bootchoose);
 		udelay(1000000);
 		//while(1);
 		run_command (s, 0);
 	}
 end:
-	udelay(1000000);
-	clear_screen();
-	//while(1);
-	return;
+	return 1;
 }
 /***************************************************************************
  * Watch for 'delay' seconds for autoboot stop or autoboot delay string.
@@ -386,7 +393,7 @@ restart_autoboot:
 		--bootdelay;
 		/* delay 100 * 10ms */
 		for (i=0; !abort && i<100; ++i) {
-			if (tstc()) {	/* we got a key press	*/
+			if (tstc() || screen_control()) {	/* we got a key press	*/
 				abort  = 1;	/* don't auto boot	*/
 				bootdelay = 0;	/* no more delay	*/
 # ifdef CONFIG_MENUKEY
@@ -396,24 +403,7 @@ restart_autoboot:
 # endif
 				break;
 			}
-			if ((key = get_keypress()) ||
-                    ((ts_xy = get_touch_xy()) != 0xffffffff)){
-				printf("get key %d, ts_xy %x\n", key, ts_xy);
-				if(key == OK_KEY){
-					puts("The screen and key set to autoboot at once! Let's go!\n");
-					abort = 0;
-					bootdelay = 0;
-					break;
-				}
-				else{
-					puts("The screen and key get control!\n");
-					screen_control();
-					puts("The screen and key release control!\n");
-					bootdelay = bootdelay_bak;
-					goto restart_autoboot;
-				}
-			}
-			udelay(10000);
+            udelay(10000);
 		}
 
 		printf("\b\b\b%2d ", bootdelay);
